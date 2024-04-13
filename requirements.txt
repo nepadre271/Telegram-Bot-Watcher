@@ -1,0 +1,9 @@
+aiogram==3.4.1
+python-dotenv==1.0.1
+pydantic==2.5.3
+pydantic-settings==2.1.0
+aiohttp==3.9.3
+urllib3==1.26.17
+aiofiles==23.2.1
+yt-dlp==2024.03.10
+celery[redis]==5.3.6
