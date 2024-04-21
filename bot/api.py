@@ -2,8 +2,6 @@ import logging
 
 import aiohttp
 
-from bot.schemes import movie
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -34,28 +32,3 @@ class KinoPoiskAPI:
                 logger.info(f"Получено {len(self.results)} результатов по запросу '{query}'")
 
         return self.results[self.current_index: self.current_index + 10]
-
-
-class KinoClubAPI:
-    def __init__(self, token):
-        self.token = token
-        self.base_url = "https://kinoclub.dev/api/movies/"
-
-    async def get_movie(self, kp_id) -> movie.Movie | None:
-        url = f"{self.base_url}{kp_id}"
-        headers = {"Authorization": self.token}
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as response:
-                if response.status != 200:
-                    return None
-
-                body = await response.json()
-                if body.get("status", "") != "ok":
-                    return None
-
-                try:
-                    result = movie.Movie.model_validate(body["data"])
-                except ValueError:
-                    return None
-                else:
-                    return result

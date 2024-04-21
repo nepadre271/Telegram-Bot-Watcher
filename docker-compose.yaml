@@ -8,10 +8,42 @@ services:
     restart: unless-stopped
     depends_on:
       - telegram-bot-api
+      - redis
     volumes:
-      - ./bot:/app/bot
+      - ./:/app
     env_file:
       - .env
+    environment:
+      REDIS_DSN: "redis://redis:6379/0"
+      UPLOADER_URL: 'http://uploader:8000'
+
+  uploader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - telegram-bot-api
+      - redis
+    env_file:
+      - .env
+    environment:
+      REDIS_DSN: "redis://redis:6379/0"
+    entrypoint: ["uvicorn", "--host", "0.0.0.0", "uploader:app"]
+
+  uploader-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - telegram-bot-api
+      - redis
+    env_file:
+      - .env
+    environment:
+      REDIS_DSN: "redis://redis:6379/0"
+    entrypoint: ["taskiq", "worker", "uploader:task_broker"]
 
   redis:
     image: redis:7.2.4-alpine3.19

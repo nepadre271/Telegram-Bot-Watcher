@@ -1,14 +1,12 @@
-from pathlib import Path
-import subprocess
 import logging
 
 from aiogram import Router, types, Bot
 
+from core.services.movie import KinoClubAPI, UploaderService
 from bot.keyboards.inline import create_movie_buttons
 from bot.handlers.user.search import kp_api
+from bot.database.redis import redis
 from bot.settings import settings
-from bot.api import KinoClubAPI
-from bot.jobs import video
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -17,13 +15,13 @@ logger = logging.getLogger(__name__)
 @router.callback_query()
 async def process_callback(query: types.CallbackQuery, bot: Bot):
     data = query.data
-
+    logger.info(f"{query.data=}")
     if data == 'pages:next_page':
         await next_page(query)
     elif data == 'pages:prev_page':
         await prev_page(query)
     elif data.startswith("movie:"):
-        await process_movie_callback(query, bot)
+        await process_movie_callback(query)
 
 
 async def next_page(query: types.CallbackQuery):
@@ -46,13 +44,16 @@ async def prev_page(query: types.CallbackQuery):
         logger.info("Обработчик prev_page обработал callback предыдущей страницы")
 
 
-async def process_movie_callback(query: types.CallbackQuery, bot: Bot):
+async def process_movie_callback(query: types.CallbackQuery):
     logger.info("Обработчик process_movie_callback вызван")
     movie_id = query.data.split(":")[1]
 
-    kinoclub_api = KinoClubAPI(settings.kinoclub_token)
-
-    movie = await kinoclub_api.get_movie(movie_id)
+    try:
+        kinoclub_api = KinoClubAPI(settings.kinoclub_token, redis)
+        movie = await kinoclub_api.get_movie(movie_id)
+    except Exception as ex:
+        logger.error(str(ex), exc_info=True)
+        return
 
     if movie is None:
         logger.error("Данные о фильме отсутствуют или не содержат ключ 'data'")
@@ -60,8 +61,13 @@ async def process_movie_callback(query: types.CallbackQuery, bot: Bot):
         return
 
     if movie.type == "film":
-        await video.download_video(movie_id)
-
+        try:
+            uploader = UploaderService(settings.uploader_url)
+            await uploader.upload_movie(query.message.chat.id, movie_id)
+        except Exception as ex:
+            logger.error(str(ex), exc_info=True)
+            return
+        
     elif movie.type == "serial":
         seasons_dict = {}
         for season in movie.seasons:
