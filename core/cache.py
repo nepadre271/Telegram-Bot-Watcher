@@ -1,12 +1,17 @@
-import sys
+from typing import AsyncIterator
 
+from hishel._utils import generate_key
 from redis.asyncio import Redis
-from loguru import logger
+import httpcore
 import hishel
 
-logger.add(sys.stdout, backtrace=True, diagnose=True)
 
-@logger.catch
+def _key_generator(request: httpcore.Request, body: bytes = b"") -> str:
+    prefix = "CachedResponse"
+    key = generate_key(request, body)
+    return f"{prefix}:{key}"
+
+
 def cache_client_factory(redis: Redis) -> hishel.AsyncCacheClient:
     # All the specification configs
     controller = hishel.Controller(
@@ -15,7 +20,8 @@ def cache_client_factory(redis: Redis) -> hishel.AsyncCacheClient:
 
             # Cache only 200 status codes
             cacheable_status_codes=[200],
-            force_cache=True
+            force_cache=True,
+            key_generator=_key_generator
     )
 
     # All the storage configs
@@ -25,3 +31,11 @@ def cache_client_factory(redis: Redis) -> hishel.AsyncCacheClient:
     )
     client = hishel.AsyncCacheClient(controller=controller, storage=storage)
     return client
+
+
+async def init_redis(redis_dsn: str) -> AsyncIterator[Redis]:
+    redis = Redis.from_url(redis_dsn, encoding="utf-8", decode_responses=True)
+    
+    yield redis
+
+    await redis.aclose()

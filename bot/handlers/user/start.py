@@ -1,8 +1,7 @@
-import logging
-
 from aiogram import Router, Bot
 from aiogram.filters import Command
 from aiogram.types import Message
+from loguru import logger
 
 from bot.utils import is_user_subscribed
 from bot.keyboards.reply import main_menu
@@ -10,7 +9,6 @@ from bot.keyboards.inline import unsub
 from bot.settings import settings
 
 router = Router()
-logger = logging.getLogger(__name__)
 
 
 @router.message(Command("start"))

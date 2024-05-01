@@ -32,11 +32,11 @@ class Queue:
         self.redis = redis
         self.name = name
         
-    async def add(self, prefix: str, value: str):
+    async def add(self, prefix: str | int, value: str):
         await self.redis.rpush(f"{self.name}:{prefix}", value)
     
-    async def pop(self, prefix: str) -> str:
+    async def pop(self, prefix: str | int) -> str:
         return await self.redis.lpop(f"{self.name}:{prefix}")
     
-    async def length(self, prefix: str) -> int:
+    async def length(self, prefix: str | int) -> int:
         return await self.redis.llen(f"{self.name}:{prefix}")

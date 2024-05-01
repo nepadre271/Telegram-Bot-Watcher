@@ -1,10 +1,9 @@
-from aiogram import Router, F
-from aiogram.filters import Command
 from aiogram.types import Message
-import logging
+from aiogram import Router, F
+from loguru import logger
 
 router = Router()
-logger = logging.getLogger(__name__)
+
 
 @router.message(F.text.lower() == 'инструкция')
 async def get_instruction(message: Message):

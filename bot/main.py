@@ -1,34 +1,44 @@
-import logging
 import asyncio
+import socket
 
-# from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram import Bot, Dispatcher
 
-# from bot.middleware.db import DbSessionMiddleware
+from bot.containers import Container
 from bot.settings import settings
 from bot.handlers import user
-
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('aiogram.event').setLevel(logging.CRITICAL)
+from bot.logger import logger
 
 
 def bot_factory() -> Bot:
-    api_backend = TelegramAPIServer.from_base("http://telegram-bot-api:8081", is_local=True)
-    bot = Bot(token=settings.tg_token, session=AiohttpSession(api=api_backend))
+    session = None
+
+    try:
+        if socket.gethostbyname("telegram-bot-api"):
+            api_backend = TelegramAPIServer.from_base("http://telegram-bot-api:8081", is_local=True)
+            session = AiohttpSession(api=api_backend)
+    except socket.gaierror:
+        pass
+
+    bot = Bot(token=settings.tg_token, session=session)
     return bot
 
 
+def init_container():
+    container = Container()
+    container.config.redis_dsn.from_value(settings.redis_dsn)
+    container.config.uploader_url.from_value(settings.uploader_url)
+    container.config.kinopoisk_token.from_value(settings.kinopoisk_token)
+    container.config.kinoclub_token.from_value(settings.kinoclub_token)
+
+
 async def main():
-    # engine = create_async_engine(url=settings.db_url, echo=True)
-    # sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
-    
+    init_container()
     bot = bot_factory()
     dp = Dispatcher()
 
     dp.include_routers(*user.routes)
-    # dp.update.middleware(DbSessionMiddleware(session_pool=sessionmaker))
 
     await bot.delete_webhook(drop_pending_updates=True)
     try:

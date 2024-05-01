@@ -1,6 +1,8 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from bot.schemes import PageCallbackFactory, SelectMovieCallbackFactory
+from core.schemes.movie.kinopoisk import SearchResponse
 from bot.settings import settings
 
 
@@ -16,20 +18,37 @@ def unsub() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
-def create_movie_buttons(results, current_index, total_results) -> InlineKeyboardMarkup:
+def create_movie_buttons(data: SearchResponse, query_hash: str) -> InlineKeyboardMarkup:
     navigation_buttons = []
     kb = InlineKeyboardBuilder()
 
-    for movie in results:
-        button_text = f"{movie['name']} ({movie['year']})"
-        callback_data = f"movie:{movie['id']}"
+    for movie in data.movies:
+        button_text = f"{movie.name} ({movie.year})"
+        callback_data = SelectMovieCallbackFactory(id=movie.id).pack()
         kb.row(InlineKeyboardButton(text=button_text, callback_data=callback_data))
 
-    if current_index >= 10:
-        navigation_buttons.append(InlineKeyboardButton(text="« Назад", callback_data="pages:prev_page"))
+    current_page = data.page
+    if current_page > 1:
+        navigation_buttons.append(
+            InlineKeyboardButton(
+                text="« Назад", 
+                callback_data=PageCallbackFactory(
+                    number=current_page - 1, 
+                    query_hash=query_hash
+                ).pack()
+            )
+        )
 
-    if current_index + 10 < total_results:
-        navigation_buttons.append(InlineKeyboardButton(text="Далее »", callback_data="pages:next_page"))
+    if current_page < data.pages:
+        navigation_buttons.append(
+            InlineKeyboardButton(
+                text="Далее »", 
+                callback_data=PageCallbackFactory(
+                    number=current_page + 1, 
+                    query_hash=query_hash
+                ).pack()
+            )
+        )
 
     if navigation_buttons:
         kb.row(*navigation_buttons)

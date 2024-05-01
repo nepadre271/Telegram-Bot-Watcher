@@ -1,9 +1,6 @@
-import logging
+from loguru import logger
 
 import aiohttp
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 class KinoPoiskAPI:
