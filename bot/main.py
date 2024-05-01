@@ -49,10 +49,10 @@ async def init_bot():
     # storage = RedisStorage(redis=redis)
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
+    dp.include_routers(*user.routes)
+
     dp.include_router(dialog)
     setup_dialogs(dp)
-
-    dp.include_routers(*user.routes)
 
     await bot.delete_webhook(drop_pending_updates=True)
     try:

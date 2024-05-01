@@ -71,8 +71,8 @@ dialog = Dialog(
                 item_id_getter=itemgetter("number"),
                 on_click=selected.on_seria_select
             ),
-            width=1,
-            height=const.SERIAS_LIMIT,
+            width=2,
+            height=const.SERIAS_LIMIT // 2,
             hide_pager=True,
             id="scroll_serias",
         ),

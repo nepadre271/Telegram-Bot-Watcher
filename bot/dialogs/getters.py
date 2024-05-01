@@ -70,7 +70,7 @@ async def serias_getter(dialog_manager: DialogManager, movie_service: MovieServi
     season = movie.seasons[season_number-1]
     season.series.sort(key=attrgetter("number"))
     serias = [{"number": number, "title": seria.number} for number, seria in enumerate(season.series, start=1)]
-    dialog_manager.dialog_data["total_pages"] = math.ceil(len(serias) / SERIAS_LIMIT)
+    dialog_manager.dialog_data["total_pages"] = math.ceil(len(serias) / SERIAS_LIMIT / 2)
 
     return {
         "serias": serias[SERIAS_LIMIT*(page-1): SERIAS_LIMIT*page]
