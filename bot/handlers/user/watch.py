@@ -30,11 +30,9 @@ async def select_movie(
     logger.info(
         f"Обработчик process_movie_callback отправил сообщение с информацией о '{movie.name}' (id:{movie.id})")
     image = types.URLInputFile(str(movie.poster))
-    await query.message.answer_photo(
-        photo=image,
-        caption=message_text,
-        parse_mode="html",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+
+    if movie.type == "film":
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
             InlineKeyboardButton(
                 text="Начать просмотр",
                 callback_data=UploadMovieCallbackFactory(
@@ -42,4 +40,19 @@ async def select_movie(
                 ).pack()
             )
         ]])
+    else:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(
+                text="Начать просмотр",
+                callback_data=UploadMovieCallbackFactory(
+                    id=movie.id
+                ).pack()
+            )
+        ]])
+
+    await query.message.answer_photo(
+        photo=image,
+        caption=message_text,
+        parse_mode="html",
+        reply_markup=keyboard
     )

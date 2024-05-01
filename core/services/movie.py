@@ -9,5 +9,5 @@ class MovieService:
     async def get(self, movie_id: int) -> kinoclub.Movie | None:
         return await self.repository.get_movie(movie_id)
     
-    async def search(self, query: str, page: int = 1) -> kinopoisk.SearchResponse | None:
-        return await self.repository.search(query, page)
+    async def search(self, query: str, page: int = 1, limit: int = 10) -> kinopoisk.SearchResponse | None:
+        return await self.repository.search(query, page, limit)

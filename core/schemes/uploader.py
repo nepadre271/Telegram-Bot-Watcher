@@ -9,6 +9,7 @@ class UploadMovieRequest(BaseModel):
     user_id: str | int = Field(...)
     movie_id: int = Field(...)
     type: MovieType = Field(...)
+    file_id: str | None = Field(default=None)
     season: int | None = Field(default=None)
     seria: int | None = Field(default=None)
 
@@ -16,5 +17,5 @@ class UploadMovieRequest(BaseModel):
         @lru_cache()
         def wrapper():
             nonlocal self
-            return ":".join(map(str, [self.movie_id, self.season, self.seria]))
+            return "_".join(map(str, [self.movie_id, self.season, self.seria]))
         return wrapper()

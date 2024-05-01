@@ -8,6 +8,10 @@ class Container(containers.DeclarativeContainer):
         ".handlers.user.watch",
         ".handlers.user.search",
         ".handlers.user.callback",
+        ".dialogs.getters",
+        ".dialogs.selected",
+        ".main",
+        __name__
     ])
     config = providers.Configuration()
     

@@ -51,7 +51,8 @@ async def upload_movie(
     await movie_storage.set(data.get_movie_id(), file_id)
     
     logger.info(f"Movie[{data.movie_id}] uploaded in telegram, {file_id=}")
-    data = schemes.UploadMovieData(file_id=file_id, movie_id=data.get_movie_id())
+    # data = schemes.UploadMovieData(file_id=file_id, movie_id=data.get_movie_id())
+    data.file_id = file_id
     data = data.model_dump_json()
     await message_router.broker.publisher(
         channel="movie_uploaded"
@@ -59,13 +60,15 @@ async def upload_movie(
     
 
 async def send_notification(data: str):
-    data: schemes.UploadMovieData = schemes.UploadMovieData.model_validate_json(data)
-        
+    data: UploadMovieRequest = UploadMovieRequest.model_validate_json(data)
+    kinoclub_api = KinoClubAPI(settings.kinoclub_token, redis)
+    movie = await kinoclub_api.get_movie(data.movie_id)
+
     skip_users = dict()
     bot = bot_factory()
-    while (await users_queue.length(data.movie_id)) > 0:
+    while (await users_queue.length(data.get_movie_id())) > 0:
         try:
-            user_id = await users_queue.pop(data.movie_id)
+            user_id = await users_queue.pop(data.get_movie_id())
         except IndexError:
             break
         
@@ -76,7 +79,8 @@ async def send_notification(data: str):
         try:
             await bot.send_video(
                 user_id, data.file_id,
-                supports_streaming=True, width=1280, height=720
+                supports_streaming=True, width=1280, height=720,
+                caption=f"{movie.name} Сезон: {data.season} Серия: {data.seria}"
             )
             logger.info(f"Send video[{data.file_id}] for user[{user_id}]")
         finally:
@@ -113,6 +117,7 @@ async def process_request(data: UploadMovieRequest):
     file_id = await movie_storage.get(data.get_movie_id())
     if file_id is not None:
         logger.info(f"Movie[{data.get_movie_id()}] found in storage, {file_id=}")
+        data.file_id = file_id
         data = data.model_dump_json()
         await send_notification(data)
         await movie_publisher.publish(data)
@@ -139,7 +144,8 @@ async def process_request(data: UploadMovieRequest):
             await movie_storage.delete(f"task:{data.get_movie_id()}")
         else:
             file_id = task.return_value
-            data = schemes.UploadMovieData(movie_id=data.get_movie_id(), file_id=file_id).model_dump_json()
+            data.file_id = file_id
+            data = data.model_dump_json()
             await send_notification(data)
             return
         

@@ -18,7 +18,7 @@ def remove_folder(folder: Path):
 
 
 async def download_video(movie: kinoclub.Movie, data: UploadMovieRequest) -> Path:
-    folder = TEMP_FOLDER / str(movie.id)
+    folder = TEMP_FOLDER / str(data.get_movie_id())
     if not folder.exists():
         folder.mkdir(0o666, exist_ok=True, parents=True)
 
@@ -47,18 +47,19 @@ async def download_video(movie: kinoclub.Movie, data: UploadMovieRequest) -> Pat
 
 async def upload_video_to_telegram(movie: kinoclub.Movie, data: UploadMovieRequest, file_path: Path) -> str:
     bot = bot_factory()
-    await bot.send_message(settings.temp_chat_id, f"[Service] Файл {movie.name} загружен, отправляю")
 
     if data.type == "film":
         file = FSInputFile(path=file_path, filename=f"{movie.name}.mp4")
     else:
         file = FSInputFile(path=file_path, filename=f"{movie.name} Сезон: {data.season} Серия: {data.seria}.mp4")
 
+    await bot.send_message(settings.temp_chat_id, f"[Service] Файл {file.filename} загружен, отправляю")
     message = await bot.send_video(
         settings.temp_chat_id, file,
         supports_streaming=True, 
         request_timeout=settings.telegram_timeout,
-        width=1280, height=720
+        width=1280, height=720,
+        caption=file.filename.replace(".mp4", "")
     )
     file_id = message.video.file_id
     logger.info(f"FileID: {file_id}")

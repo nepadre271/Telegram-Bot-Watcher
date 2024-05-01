@@ -2,9 +2,15 @@ import asyncio
 import socket
 
 from aiogram.client.session.aiohttp import AiohttpSession
+from dependency_injector.wiring import Provide, inject
 from aiogram.client.telegram import TelegramAPIServer
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage
+from aiogram_dialog import setup_dialogs
 from aiogram import Bot, Dispatcher
+from redis.asyncio import Redis
 
+from bot.dialogs.windows import dialog
 from bot.containers import Container
 from bot.settings import settings
 from bot.handlers import user
@@ -31,12 +37,20 @@ def init_container():
     container.config.uploader_url.from_value(settings.uploader_url)
     container.config.kinopoisk_token.from_value(settings.kinopoisk_token)
     container.config.kinoclub_token.from_value(settings.kinoclub_token)
+    container.wire(
+        modules=[__name__]
+    )
 
 
-async def main():
-    init_container()
+async def init_bot():
     bot = bot_factory()
-    dp = Dispatcher()
+
+    # redis = Redis.from_url(url=settings.redis_dsn, encoding="utf-8", decode_responses=True)
+    # storage = RedisStorage(redis=redis)
+    storage = MemoryStorage()
+    dp = Dispatcher(storage=storage)
+    dp.include_router(dialog)
+    setup_dialogs(dp)
 
     dp.include_routers(*user.routes)
 
@@ -45,3 +59,9 @@ async def main():
         await dp.start_polling(bot)
     except asyncio.CancelledError:
         pass
+
+
+@logger.catch()
+async def main():
+    init_container()
+    await init_bot()
