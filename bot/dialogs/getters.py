@@ -17,7 +17,8 @@ from bot.dialogs.const import MOVIES_LIMIT, SEASONS_LIMIT, SERIAS_LIMIT
 async def movies_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
     data = dialog_manager.start_data
 
-    page = get_next_page(dialog_manager, _kwargs)
+    logger.debug(dialog_manager.dialog_data)
+    page = get_next_page(dialog_manager, _kwargs, prefix="m")
     search_result = await movie_service.search(data["query"], page=page, limit=MOVIES_LIMIT)
 
     movies = []
@@ -28,7 +29,7 @@ async def movies_getter(dialog_manager: DialogManager, movie_service: MovieServi
     logger.debug(dialog_manager.dialog_data)
     for movie in search_result.movies:
         movies.append({
-            "title": f"{movie.name} ({movie.year})",
+            "title": f"{movie.name} ({'Сериал, ' if movie.is_series else ''}{movie.year})",
             "id": movie.id
         })
 
@@ -40,7 +41,6 @@ async def movies_getter(dialog_manager: DialogManager, movie_service: MovieServi
 @logger.catch()
 @inject
 async def seasons_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
-    page = get_next_page(dialog_manager, _kwargs)
     logger.debug(dialog_manager.dialog_data)
     movie_id = dialog_manager.dialog_data["movie_id"]
     movie = await movie_service.get(movie_id)
@@ -49,17 +49,16 @@ async def seasons_getter(dialog_manager: DialogManager, movie_service: MovieServ
         return []
 
     seasons = [{"number": number, "title": season.title} for number, season in enumerate(movie.seasons, start=1)]
-    dialog_manager.dialog_data["total_pages"] = math.ceil(len(seasons) / SEASONS_LIMIT)
 
     return {
-        "seasons": seasons[SEASONS_LIMIT*(page-1): SEASONS_LIMIT*page]
+        "seasons": seasons
     }
 
 
 @logger.catch()
 @inject
 async def serias_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
-    page = get_next_page(dialog_manager, _kwargs)
+    logger.debug(dialog_manager.dialog_data)
     movie_id = dialog_manager.dialog_data["movie_id"]
     season_number = dialog_manager.dialog_data["season_number"]
     movie = await movie_service.get(movie_id)
@@ -70,20 +69,19 @@ async def serias_getter(dialog_manager: DialogManager, movie_service: MovieServi
     season = movie.seasons[season_number-1]
     season.series.sort(key=attrgetter("number"))
     serias = [{"number": number, "title": seria.number} for number, seria in enumerate(season.series, start=1)]
-    dialog_manager.dialog_data["total_pages"] = math.ceil(len(serias) / SERIAS_LIMIT / 2)
 
     return {
-        "serias": serias[SERIAS_LIMIT*(page-1): SERIAS_LIMIT*page]
+        "serias": serias
     }
 
 
-def get_next_page(dialog_manager: DialogManager, data: dict) -> int:
+def get_next_page(dialog_manager: DialogManager, data: dict, prefix: str) -> int:
     pager_data = data.get("aiogd_original_callback_data", "")
     page = dialog_manager.dialog_data.get("page", 1)
 
-    if "pager_next" in pager_data:
+    if f"{prefix}_pager_next" in pager_data:
         page = page + 1
-    elif "pager_prev" in pager_data:
+    elif f"{prefix}_pager_prev" in pager_data:
         page = page - 1
 
     dialog_manager.dialog_data["page"] = page

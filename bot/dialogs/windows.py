@@ -6,7 +6,7 @@ from aiogram_dialog import (
 )
 from aiogram_dialog.widgets.kbd import (
     NextPage, PrevPage, Row, ScrollingGroup,
-    Select, Back
+    Select, Back, SwitchTo
 )
 from aiogram_dialog.widgets.text import Const, Format
 from bot.dialogs.states import DialogSG
@@ -30,8 +30,8 @@ dialog = Dialog(
             id="scroll_movies",
         ),
         Row(
-            PrevPage(scroll="scroll_movies", id="__m_pager_prev__", when=keyboards.hide_back_button),
-            NextPage(scroll="scroll_movies", id="__m_pager_next__", when=keyboards.hide_next_button),
+            PrevPage(scroll="scroll_movies", id="__m_pager_prev__", when=keyboards.hide_back_button(True)),
+            NextPage(scroll="scroll_movies", id="__m_pager_next__", when=keyboards.hide_next_button(True)),
         ),
         getter=getters.movies_getter,
         state=DialogSG.SELECT_MOVIE,
@@ -52,11 +52,13 @@ dialog = Dialog(
             id="scroll_seasons",
         ),
         Row(
-            PrevPage(scroll="scroll_seasons", id="__sea_pager_prev__", when=keyboards.hide_back_button),
-            NextPage(scroll="scroll_seasons", id="__sea_pager_next__", when=keyboards.hide_next_button),
+            PrevPage(scroll="scroll_seasons", id="__sea_pager_prev__", when=keyboards.hide_back_button(False)),
+            NextPage(scroll="scroll_seasons", id="__sea_pager_next__", when=keyboards.hide_next_button(False)),
         ),
-        Back(
-            Const("К выбору фильмов/сериалов")
+        SwitchTo(
+            Const("К выбору фильмов/сериалов"),
+            state=DialogSG.SELECT_MOVIE,
+            id="SeasonsBack"
         ),
         getter=getters.seasons_getter,
         state=DialogSG.SELECT_SEASON,
@@ -77,11 +79,13 @@ dialog = Dialog(
             id="scroll_serias",
         ),
         Row(
-            PrevPage(scroll="scroll_serias", id="__ser_pager_prev__", when=keyboards.hide_back_button),
-            NextPage(scroll="scroll_serias", id="__ser_pager_next__", when=keyboards.hide_next_button),
+            PrevPage(scroll="scroll_serias", id="__ser_pager_prev__", when=keyboards.hide_back_button(False)),
+            NextPage(scroll="scroll_serias", id="__ser_pager_next__", when=keyboards.hide_next_button(False)),
         ),
-        Back(
-            Const("К выбору сезонов")
+        SwitchTo(
+            Const("К выбору сезонов"),
+            state=DialogSG.SELECT_SEASON,
+            id="SeriasBack"
         ),
         getter=getters.serias_getter,
         state=DialogSG.SELECT_SERIA,
