@@ -1,15 +1,15 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from aiogram.types import URLInputFile
+from taskiq import TaskiqEvents, TaskiqDepends, Context, SimpleRetryMiddleware
 from taskiq_redis import RedisAsyncResultBackend, ListQueueBroker
-from taskiq import TaskiqEvents, TaskiqDepends, Context
 from faststream.redis.fastapi import RedisRouter
 from redis.asyncio import Redis, from_url
+from aiogram.enums import ParseMode
 from fastapi import FastAPI
 from loguru import logger
 
-from uploader import schemes, storage, service
+from uploader import storage, service
 from uploader.settings import settings
 from uploader.bot import bot_factory
 from core.schemes.uploader import UploadMovieRequest
@@ -27,9 +27,14 @@ task_broker = ListQueueBroker(
     url=settings.redis_dsn
 )
 task_broker.with_result_backend(task_backend)
+task_broker.with_middlewares(
+    SimpleRetryMiddleware(
+        default_retry_count=3
+    )
+)
     
 
-@task_broker.task
+@task_broker.task(retry_on_error=True)
 async def upload_movie(
     data: UploadMovieRequest,
     context: Annotated[Context, TaskiqDepends()]
@@ -37,7 +42,7 @@ async def upload_movie(
     await movie_storage.set(f"task:{data.get_movie_id()}", context.message.task_id)
         
     kinoclub_api = KinoClubAPI(settings.kinoclub_token, redis)
-    movie = await kinoclub_api.get_movie(data.movie_id)
+    movie = await kinoclub_api.get_movie(data.movie_id, disable_cache=True)
     
     # Загрузить и преобразовать файл
     file_path = await service.download_video(movie, data)
@@ -51,7 +56,6 @@ async def upload_movie(
     await movie_storage.set(data.get_movie_id(), file_id)
     
     logger.info(f"Movie[{data.movie_id}] uploaded in telegram, {file_id=}")
-    # data = schemes.UploadMovieData(file_id=file_id, movie_id=data.get_movie_id())
     data.file_id = file_id
     data = data.model_dump_json()
     await message_router.broker.publisher(
@@ -77,12 +81,21 @@ async def send_notification(data: str):
         
         skip_users[user_id] = 1
         try:
-            await bot.send_video(
-                user_id, data.file_id,
-                supports_streaming=True, width=1280, height=720,
-                caption=f"{movie.name} Сезон: {data.season} Серия: {data.seria}"
-            )
-            logger.info(f"Send video[{data.file_id}] for user[{user_id}]")
+            if data.type == "film":
+                await bot.send_video(
+                    user_id, data.file_id,
+                    supports_streaming=True, width=1280, height=720,
+                    caption=f"<b>{movie.name}</b>",
+                    parse_mode=ParseMode.HTML
+                )
+            else:
+                await bot.send_video(
+                    user_id, data.file_id,
+                    supports_streaming=True, width=1280, height=720,
+                    caption=f"<b>{movie.name}</b> \nСезон: {data.season} Серия: {data.seria}",
+                    parse_mode=ParseMode.HTML
+                )
+            logger.debug(f"Send video[{data.file_id}] for user[{user_id}]")
         finally:
             pass
 

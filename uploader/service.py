@@ -17,6 +17,7 @@ def remove_folder(folder: Path):
     shutil.rmtree(folder, ignore_errors=True)
 
 
+@logger.catch()
 async def download_video(movie: kinoclub.Movie, data: UploadMovieRequest) -> Path:
     folder = TEMP_FOLDER / str(data.get_movie_id())
     if not folder.exists():
@@ -41,7 +42,7 @@ async def download_video(movie: kinoclub.Movie, data: UploadMovieRequest) -> Pat
     logger.info(f"YT-DLP exit: {process.returncode}")
     if process.returncode != 0:
         remove_folder(file_path.parent)
-        raise ValueError(str(process.stderr))
+        raise ValueError(str(process.stderr.read()))
     return file_path
     
 

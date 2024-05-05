@@ -1,14 +1,11 @@
 import asyncio
 import socket
 
+from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 from aiogram.client.session.aiohttp import AiohttpSession
-from dependency_injector.wiring import Provide, inject
 from aiogram.client.telegram import TelegramAPIServer
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.fsm.storage.redis import RedisStorage
 from aiogram_dialog import setup_dialogs
 from aiogram import Bot, Dispatcher
-from redis.asyncio import Redis
 
 from bot.dialogs.windows import dialog
 from bot.containers import Container
@@ -45,9 +42,12 @@ def init_container():
 async def init_bot():
     bot = bot_factory()
 
-    # redis = Redis.from_url(url=settings.redis_dsn, encoding="utf-8", decode_responses=True)
-    # storage = RedisStorage(redis=redis)
-    storage = MemoryStorage()
+    storage = RedisStorage.from_url(
+        url=settings.redis_dsn,
+        connection_kwargs=dict(encoding="utf-8", decode_responses=True),
+        key_builder=DefaultKeyBuilder(with_destiny=True)
+    )
+
     dp = Dispatcher(storage=storage)
     dp.include_routers(*user.routes)
 

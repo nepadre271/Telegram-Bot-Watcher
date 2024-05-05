@@ -1,3 +1,5 @@
+import time
+
 from pydantic import ValidationError
 from redis.asyncio import Redis
 from loguru import logger
@@ -7,19 +9,21 @@ from core.cache import cache_client_factory
 
 
 class KinoClubAPI:
-    BASE_URL = "https://kinoclub.dev/api/movies"
-    
     def __init__(self, token: str, redis: Redis):
         self.token = token
         self.headers = {"Authorization": self.token}
-        self.client = cache_client_factory(redis)
-    
-    async def get_movie(self, movie_id: int) -> kinoclub.Movie | None:
-        url = f"{self.BASE_URL}/{movie_id}"
-        headers = self.headers | {"cache-control": f"max-age={86400 * 31}"}
-        response = await self.client.get(url, headers=headers)
-        
-        logger.debug(f"Response[{url}] from cache[{response.extensions['from_cache']}]")
+        self.client = cache_client_factory(redis, "https://kinoclub.dev/api", key_prefix="KinoClub")
+
+    async def get_movie(self, movie_id: int, disable_cache: bool = False) -> kinoclub.Movie | None:
+        url = f"/movies/{movie_id}"
+        response = await self.client.get(
+            url, headers=self.headers,
+            extensions={"cache_disabled": True, "force_cache": False} if disable_cache else {}
+        )
+        logger.debug(
+            f"Response[{url}] from cache[{response.extensions.get('from_cache', False)}], "
+            f"uses: {response.extensions.get('cache_metadata', {}).get('number_of_uses', 0)}"
+        )
         if response.status_code != 200:
             return None
 
@@ -37,27 +41,28 @@ class KinoClubAPI:
 
 
 class KinoPoiskAPI:
-    BASE_URL = "https://api.kinopoisk.dev/v1.4"
 
     def __init__(self, token: str, redis: Redis):
         self.token = token
         self.headers = {"X-API-KEY": self.token}
-        self.client = cache_client_factory(redis)
+        self.client = cache_client_factory(redis, "https://api.kinopoisk.dev/v1.4", key_prefix="KinoPoisk")
 
     async def search_movies(self, query: str, page: int = 1, limit: int = 10) -> kinopoisk.SearchResponse | None:
-        url = f"{self.BASE_URL}/movie/search"
+        url = f"/movie/search"
         params = {"page": page, "limit": limit, "query": query}
-        headers = self.headers | {"cache-control": f"max-age={86400 * 31}"}
-        
-        response = await self.client.get(url, params=params, headers=headers)
-        logger.debug(f"Response[{url} : {params=}] from cache[{response.extensions['from_cache']}]", )
-        
+
+        response = await self.client.get(url, params=params, headers=self.headers)
+        logger.debug(
+            f"Response[{url}] from cache[{response.extensions.get('from_cache', False)}], "
+            f"uses: {response.extensions.get('cache_metadata', {}).get('number_of_uses', 0)}"
+        )
+
         if response.status_code != 200:
             logger.warning(f"[{url}] вернул код статуса {response.status_code}; Body:{response.text}")
             return None
 
         data: bytes = response.read()
-        
+
         try:
             result = kinopoisk.SearchResponse.model_validate_json(data)
             if result.query is None:
@@ -73,9 +78,9 @@ class MovieRepository:
     def __init__(self, kinopoisk_api: KinoPoiskAPI, kinoclub_api: KinoClubAPI):
         self.kinoclub = kinoclub_api
         self.kinopoisk = kinopoisk_api
-        
-    async def get_movie(self, movie_id: int) -> kinoclub.Movie | None:
-        return await self.kinoclub.get_movie(movie_id)
-    
+
+    async def get_movie(self, movie_id: int, disable_cache: bool = False) -> kinoclub.Movie | None:
+        return await self.kinoclub.get_movie(movie_id, disable_cache=disable_cache)
+
     async def search(self, query: str, page: int = 1, limit: int = 10) -> kinopoisk.SearchResponse | None:
         return await self.kinopoisk.search_movies(query, page, limit)
