@@ -1,5 +1,3 @@
-import time
-
 from pydantic import ValidationError
 from redis.asyncio import Redis
 from loguru import logger
@@ -12,10 +10,37 @@ class KinoClubAPI:
     def __init__(self, token: str, redis: Redis):
         self.token = token
         self.headers = {"Authorization": self.token}
-        self.client = cache_client_factory(redis, "https://kinoclub.dev/api", key_prefix="KinoClub")
+        self.client = cache_client_factory(redis, "https://kinoclub.dev", key_prefix="KinoClub")
+        
+        self.redis = redis
+        self.cache_table = "KinoClub:movies"
+        
+    async def get_available_movies_id(self) -> list[int]:
+        url = "/films.json"
+        response = await self.client.get(url)
+
+        if response.status_code != 200:
+            return []
+
+        return response.json()
+        
+    async def update_available_movies_id(self):
+        update = await self.redis.ttl(f"{self.cache_table}:update")
+        table_exists = await self.redis.exists(self.cache_table)
+        if update != -2 and table_exists:
+            return
+        
+        movies_id = await self.get_available_movies_id()
+        ids = {str(movie_id): "1" for movie_id in movies_id}
+        await self.redis.hset(self.cache_table, mapping=ids)
+        await self.redis.set(f"{self.cache_table}:update", "1", ex=86400 * 31)
+
+    async def is_movie_exists(self, movie_id: int) -> bool:        
+        exists = await self.redis.hexists(self.cache_table, str(movie_id))
+        return exists
 
     async def get_movie(self, movie_id: int, disable_cache: bool = False) -> kinoclub.Movie | None:
-        url = f"/movies/{movie_id}"
+        url = f"/api/movies/{movie_id}"
         response = await self.client.get(
             url, headers=self.headers,
             extensions={"cache_disabled": True, "force_cache": False} if disable_cache else {}
@@ -80,7 +105,17 @@ class MovieRepository:
         self.kinopoisk = kinopoisk_api
 
     async def get_movie(self, movie_id: int, disable_cache: bool = False) -> kinoclub.Movie | None:
+        await self.kinoclub.update_available_movies_id()
+        exists = await self.kinoclub.is_movie_exists(movie_id)
+        if exists is False:
+            return None
         return await self.kinoclub.get_movie(movie_id, disable_cache=disable_cache)
 
     async def search(self, query: str, page: int = 1, limit: int = 10) -> kinopoisk.SearchResponse | None:
-        return await self.kinopoisk.search_movies(query, page, limit)
+        data = await self.kinopoisk.search_movies(query, page, limit)
+        
+        await self.kinoclub.update_available_movies_id()
+        for movie in data.movies:
+            movie.can_download = await self.kinoclub.is_movie_exists(movie.id)
+        
+        return data

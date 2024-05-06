@@ -1,5 +1,6 @@
 from operator import attrgetter
 import math
+import copy
 
 from aiogram_dialog import (
     DialogManager,
@@ -9,29 +10,38 @@ from loguru import logger
 
 from core.services import MovieService
 from bot.containers import Container
-from bot.dialogs.const import MOVIES_LIMIT, SEASONS_LIMIT, SERIAS_LIMIT
+from bot.dialogs.const import MOVIES_LIMIT
 
 
 @logger.catch()
 @inject
 async def movies_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
     data = dialog_manager.start_data
-
-    logger.debug(dialog_manager.dialog_data)
     page = get_next_page(dialog_manager, _kwargs, prefix="m")
-    search_result = await movie_service.search(data["query"], page=page, limit=MOVIES_LIMIT)
-
+    
+    search_result = data.get("data", None)
+    if search_result is None:
+        search_result = await movie_service.search(data["query"], page=page, limit=MOVIES_LIMIT)
+    else:
+        search_result = copy.deepcopy(search_result)
+        dialog_manager.start_data["data"] = None
+    
     movies = []
     if search_result is None:
-        return movies
+        return {
+            "movies": movies
+        }
 
     dialog_manager.dialog_data["total_pages"] = math.ceil(search_result.total / 10)
     logger.debug(dialog_manager.dialog_data)
     for movie in search_result.movies:
-        movies.append({
+        movie_data = {
             "title": f"{movie.name} ({'Сериал, ' if movie.is_series else ''}{movie.year})",
             "id": movie.id
-        })
+        }
+        if movie.can_download is False:
+            movie_data["title"] = f"❌ {movie_data['title']}"
+        movies.append(movie_data)
 
     return {
         "movies": movies,

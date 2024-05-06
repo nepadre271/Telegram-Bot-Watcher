@@ -6,3 +6,4 @@ class MovieMin(BaseModel):
     name: str = Field(...)
     year: int | str | None = Field(default=None)
     is_series: bool = Field(default=False, alias="isSeries")
+    can_download: bool = Field(default=True)

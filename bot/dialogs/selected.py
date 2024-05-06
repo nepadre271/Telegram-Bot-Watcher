@@ -29,17 +29,18 @@ async def on_movie_select(
 
     movie = await movie_service.get(int(item_id))
     if movie is None:
+        message_text = "Недоступен для просмотра/загрузки ❌"
+        await callback.answer(message_text)
         return
-
+    
     if movie.type != "film":
         manager.dialog_data["movie_id"] = movie.id
         await manager.next()
-
         return
 
     await callback.answer(f"Выбран фильм: {movie.name}")
     message_text = f"<b>{movie.type.verbose}</b>: {movie.name}\n\n<b>Описание</b>:\n{movie.full_description}"
-
+    
     logger.info(
         f"Обработчик process_movie_callback отправил сообщение с информацией о '{movie.name}' (id:{movie.id})")
     image = types.URLInputFile(str(movie.poster))
@@ -59,7 +60,6 @@ async def on_movie_select(
         parse_mode="html",
         reply_markup=keyboard
     )
-    await manager.done()
 
 
 async def on_season_select(
@@ -86,7 +86,6 @@ async def on_seria_select(
         return
 
     manager.dialog_data["seria_number"] = int(item_id)
-    # await manager.switch_to(DialogSG.SELECT_SERIA)
     logger.debug(manager.dialog_data)
     request = UploadMovieRequest(
         movie_id=manager.dialog_data["movie_id"],
@@ -96,4 +95,3 @@ async def on_seria_select(
         user_id=callback.message.chat.id
     )
     await uploader_service.upload_movie(request)
-    # await manager.done()
