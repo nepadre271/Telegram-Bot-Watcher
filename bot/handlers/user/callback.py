@@ -1,32 +1,13 @@
 from dependency_injector.wiring import inject, Provide
-from redis.asyncio import Redis
 from aiogram import Router, types
 from loguru import logger
 
-from bot.schemes import PageCallbackFactory, UploadMovieCallbackFactory
 from core.services import UploaderService, MovieService
-from bot.keyboards.inline import create_movie_buttons
 from core.schemes.uploader import UploadMovieRequest
+from bot.schemes import  UploadMovieCallbackFactory
 from bot.containers import Container
 
 router = Router()
-        
-
-@router.callback_query(PageCallbackFactory.filter())
-@inject
-async def process_page(
-    query: types.CallbackQuery, 
-    callback_data: PageCallbackFactory, 
-    movie_service: MovieService = Provide[Container.movie_service],
-    redis: Redis = Provide[Container.redis_client]
-):
-    search_query = await redis.hget("query-table", callback_data.query_hash)
-    data = await movie_service.search(search_query, callback_data.number)
-    if data is None:
-        return
-    
-    inline_kb = create_movie_buttons(data, callback_data.query_hash)
-    await query.message.edit_text("Выберите фильм или сериал из списка ниже:", reply_markup=inline_kb)
 
 
 @router.callback_query(UploadMovieCallbackFactory.filter())

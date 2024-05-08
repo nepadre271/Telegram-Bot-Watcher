@@ -23,6 +23,8 @@ class InterceptHandler(logging.Handler):
 
 
 logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=True)
-logging.getLogger('aiogram.event').setLevel(logging.CRITICAL)
+logging.getLogger('aiogram.event').setLevel(logging.DEBUG)
+logging.getLogger('aiogram-dialog').setLevel(logging.DEBUG)
+logging.getLogger('aiogram').setLevel(logging.DEBUG)
 
 logger.disable("httpx")

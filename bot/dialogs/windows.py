@@ -5,17 +5,16 @@ from aiogram_dialog import (
     Window
 )
 from aiogram_dialog.widgets.kbd import (
-    NextPage, PrevPage, Row, ScrollingGroup,
-    Select, Back, SwitchTo
+    NextPage, PrevPage, Row,
+    ScrollingGroup, Select, SwitchTo, Button
 )
 from aiogram_dialog.widgets.text import Const, Format
-from bot.dialogs.states import DialogSG
 from bot.dialogs import selected, const, getters, keyboards
+from bot.states import DialogSG, DialogSelectGenres
 
-
-dialog = Dialog(
+video_select_dialog = Dialog(
     Window(
-        Const("Выберите фильм"),
+        Const("Выберите фильм/сериал"),
         ScrollingGroup(
             Select(
                 Format("{item[title]}"),
@@ -89,5 +88,20 @@ dialog = Dialog(
         ),
         getter=getters.serias_getter,
         state=DialogSG.SELECT_SERIA,
+    ),
+)
+
+genres_select_dialog = Dialog(
+    Window(
+        Const("Выберите жанры"),
+        keyboards.get_genres_keyboard(),
+        keyboards.get_genres_keyboard_scroller(),
+        Button(
+            Const("Поиск"),
+            id="genres_search",
+            on_click=selected.on_genres_search_clicked
+        ),
+        state=DialogSelectGenres.SELECT_GENRE,
+        getter=getters.genres_getter
     ),
 )

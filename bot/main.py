@@ -7,9 +7,9 @@ from aiogram.client.telegram import TelegramAPIServer
 from aiogram_dialog import setup_dialogs
 from aiogram import Bot, Dispatcher
 
-from bot.dialogs.windows import dialog
 from bot.containers import Container
 from bot.settings import settings
+from bot.dialogs import windows
 from bot.handlers import user
 from bot.logger import logger
 
@@ -51,7 +51,8 @@ async def init_bot():
     dp = Dispatcher(storage=storage)
     dp.include_routers(*user.routes)
 
-    dp.include_router(dialog)
+    dp.include_router(windows.video_select_dialog)
+    dp.include_router(windows.genres_select_dialog)
     setup_dialogs(dp)
 
     await bot.delete_webhook(drop_pending_updates=True)

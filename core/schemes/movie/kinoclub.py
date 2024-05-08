@@ -45,6 +45,12 @@ class Movie(MovieMin):
     seasons: list[Season] = Field(default_factory=list)
     download_url: AnyHttpUrl | None = Field(default=None, alias="url")
 
+    @field_validator("short_description", "full_description", mode="before")
+    def validate_description(cls, value: str | None) -> str:
+        if value is None:
+            return "..."
+        return value
+
     def get_seria(self, season: int, seria: int) -> Seria:
         season: Season = self.seasons[season-1]
         season.series.sort(key=attrgetter("number"))

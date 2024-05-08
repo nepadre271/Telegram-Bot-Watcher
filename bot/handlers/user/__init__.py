@@ -1,9 +1,8 @@
-from . import callback, start, search, instruction, watch
+from . import callback, start, search, instruction
 
 routes = [
     start.router,
-    search.router,
     instruction.router,
+    search.router,
     callback.router,
-    watch.router
 ]

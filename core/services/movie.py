@@ -9,5 +9,11 @@ class MovieService:
     async def get(self, movie_id: int, disable_cache: bool = False) -> kinoclub.Movie | None:
         return await self.repository.get_movie(movie_id, disable_cache=disable_cache)
     
-    async def search(self, query: str, page: int = 1, limit: int = 10) -> kinopoisk.SearchResponse | None:
+    async def search(self, query: str | dict, page: int = 1, limit: int = 10) -> kinopoisk.SearchResponse | None:
         return await self.repository.search(query, page, limit)
+
+    async def recommendations(self, page: int = 1, limit: int = 10) -> kinopoisk.SearchResponse | None:
+        return await self.repository.recommendations(page, limit)
+
+    async def get_genres(self) -> list[kinopoisk.Genre]:
+        return await self.repository.get_genres()

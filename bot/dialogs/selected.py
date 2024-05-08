@@ -7,13 +7,12 @@ from aiogram_dialog import DialogManager
 from dependency_injector.wiring import Provide, inject
 from loguru import logger
 
-from bot.dialogs.states import DialogSG
 from bot.schemes import UploadMovieCallbackFactory
 from core.schemes.movie.kinoclub import MovieType
 from core.services import MovieService, UploaderService
 from core.schemes.uploader import UploadMovieRequest
-
 from bot.containers import Container
+from bot import states
 
 
 @logger.catch()
@@ -39,8 +38,8 @@ async def on_movie_select(
         return
 
     await callback.answer(f"Выбран фильм: {movie.name}")
-    message_text = f"<b>{movie.type.verbose}</b>: {movie.name}\n\n<b>Описание</b>:\n{movie.full_description}"
-    
+    message_text = f"<b>{movie.type.verbose}</b>: {movie.name}\n\n<b>Описание</b>:\n{movie.full_description}"[:1024]
+
     logger.info(
         f"Обработчик process_movie_callback отправил сообщение с информацией о '{movie.name}' (id:{movie.id})")
     image = types.URLInputFile(str(movie.poster))
@@ -95,3 +94,27 @@ async def on_seria_select(
         user_id=callback.message.chat.id
     )
     await uploader_service.upload_movie(request)
+
+
+async def on_genres_search_clicked(
+        callback: CallbackQuery, widget: Any,
+        manager: DialogManager
+):
+    genres_list = manager.find('multi_genres')
+    genres = genres_list.get_checked()
+    logger.debug(f"User[{callback.message.chat.id}] select genres: {genres}")
+
+    if len(genres) < 1:
+        await callback.answer("Выберите один или несколько жанров")
+        return
+
+    await manager.start(
+        states.DialogSG.SELECT_MOVIE,
+        data={
+            "query": {
+                "genres.name": genres,
+                "sortField": ["rating.kp"],
+                "sortType": "-1"
+            }
+        }
+    )

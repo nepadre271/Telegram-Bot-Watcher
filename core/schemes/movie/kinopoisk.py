@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 
 from .base import MovieMin
     
@@ -9,4 +9,11 @@ class SearchResponse(BaseModel):
     limit: int = Field(...)
     page: int = Field(...)
     pages: int = Field(...)
-    query: str | None = Field(default=None)
+
+
+class Genre(BaseModel):
+    name: str = Field(...)
+    slug: str = Field(...)
+
+
+genres_list_adapter = TypeAdapter(list[Genre])

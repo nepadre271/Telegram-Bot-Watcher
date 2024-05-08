@@ -5,7 +5,6 @@ from core import repositories, services, cache
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(modules=[
-        ".handlers.user.watch",
         ".handlers.user.search",
         ".handlers.user.callback",
         ".dialogs.getters",
