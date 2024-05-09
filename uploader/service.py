@@ -42,7 +42,8 @@ async def download_video(movie: kinoclub.Movie, data: UploadMovieRequest) -> Pat
     logger.info(f"YT-DLP exit: {process.returncode}")
     if process.returncode != 0:
         remove_folder(file_path.parent)
-        raise ValueError(str(process.stderr.read()))
+        error = await process.stderr.read()
+        raise ValueError(str(error))
     return file_path
     
 
