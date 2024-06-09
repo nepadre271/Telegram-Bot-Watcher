@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     depends_on:
       - telegram-bot-api
+      - migrate
       - redis
     volumes:
       - ./:/app
@@ -45,6 +46,18 @@ services:
       REDIS_DSN: "redis://redis:6379/0"
     entrypoint: [ "taskiq", "worker", "uploader:task_broker" ]
 
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    tty: true
+    entrypoint: [ "alembic", "upgrade", "head" ]
+
   redis:
     image: redis:7.2.4-alpine3.19
     restart: unless-stopped
@@ -71,14 +84,19 @@ services:
     restart: always
     #command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DB:postgres}
+      POSTGRES_USER: ${PG_USER:postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:postgres}
       PGDATA: /var/lib/postgresql/data
     volumes:
       - database:/var/lib/postgresql/data
-#    ports:
-#      - '127.0.0.1:5432:5432'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  #    ports:
+  #      - '127.0.0.1:5432:5432'
 
   pgadmin4:
     image: elestio/pgadmin:REL-8_8
