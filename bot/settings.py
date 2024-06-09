@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     temp_chat_id: str = Field(...)
     redis_dsn: str = Field("redis://localhost:6379/0")
     uploader_url: str = Field("http://localhost:8000")
-    database_url: str = Field("sqlite+aiosqlite:///bot.db")
+    database_dsn: str = Field("sqlite+aiosqlite:///bot.db")
     timezone: str = Field("europe/moscow")
     
 

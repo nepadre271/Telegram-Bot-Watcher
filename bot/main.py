@@ -31,7 +31,7 @@ def bot_factory() -> Bot:
 def init_container():
     container = Container()
     container.config.redis_dsn.from_value(settings.redis_dsn)
-    container.config.database_dsn.from_value(settings.database_url)
+    container.config.database_dsn.from_value(settings.database_dsn)
 
     container.config.uploader_url.from_value(settings.uploader_url)
     container.config.kinopoisk_token.from_value(settings.kinopoisk_token)
