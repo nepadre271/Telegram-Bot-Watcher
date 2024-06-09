@@ -19,10 +19,10 @@ router = Router()
 @logger.catch()
 @inject
 async def process_buy_command(
-        callback: CallbackQuery, widget: Any, manager: DialogManager, item_id: int,
+        callback: CallbackQuery, widget: Any, manager: DialogManager, item_id: str,
         subscribe_repository: SubscribeRepository = Provide[Container.subscribe_repository],
 ):
-    subscribe = await subscribe_repository.get(item_id)
+    subscribe = await subscribe_repository.get(int(item_id))
     if subscribe.visible is False:
         await callback.message.answer("Данная подписка не доступна")
         return
@@ -72,7 +72,7 @@ async def process_successful_payment(
     sub_to = await user_repository.update_subscribe(
         user, subscribe_time=timedelta(seconds=payload["subscribe_time"])
     )
-    await payment_history_repository.create(user.id, subscribe_id)
+    await payment_history_repository.create(user.id, int(subscribe_id))
 
     await bot.send_message(
         message.chat.id,
