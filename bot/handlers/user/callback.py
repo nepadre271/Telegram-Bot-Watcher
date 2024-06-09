@@ -58,7 +58,6 @@ def can_watch(func):
 async def process_movie_callback(
     query: types.CallbackQuery,
     callback_data: UploadMovieCallbackFactory,
-    bot: Bot,
     movie_service: MovieService = Provide[Container.movie_service],
     uploader_service: UploaderService = Provide[Container.uploader_service],
     user_repository: UserRepository = Provide[Container.user_repository],
@@ -71,19 +70,19 @@ async def process_movie_callback(
         await query.message.answer("Извините, информация о фильме не найдена.")
         return
 
-    await query.message.answer("Кина будет 🌚👍")
     user = await user_repository.get(query.message.chat.id)
     if user.views_left > 0:
         await user_repository.update_views_count(user, -1)
-    # data = UploadMovieRequest(
-    #     user_id=query.message.chat.id,
-    #     movie_id=movie.id,
-    #     type=movie.type,
-    #     season=callback_data.season,
-    #     seria=callback_data.seria
-    # )
-    # try:
-    #     await uploader_service.upload_movie(data)
-    # except Exception as ex:
-    #     logger.error(str(ex), exc_info=True)
-    #     return
+
+    data = UploadMovieRequest(
+        user_id=query.message.chat.id,
+        movie_id=movie.id,
+        type=movie.type,
+        season=callback_data.season,
+        seria=callback_data.seria
+    )
+    try:
+        await uploader_service.upload_movie(data)
+    except Exception as ex:
+        logger.error(str(ex), exc_info=True)
+        return

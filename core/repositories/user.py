@@ -67,23 +67,3 @@ class UserRepository:
         result = await self.session.execute(statement)
         count = result.scalar()
         return count
-
-    # async def update_user_data(self, id: int, page: int) -> User:
-    #     user = await self.session.get(User, id)
-    #     user.page = page
-    #
-    #     await self.session.commit()
-    #     return user
-    #
-    # async def delete_bookmark(self, user_id: int, page: int):
-    #     stmt = delete(Bookmark).where(
-    #         and_(user_id == Bookmark.user_id, page == Bookmark.page)
-    #     )
-    #     await self.session.execute(stmt)
-    #     await self.session.commit()
-    #
-    # async def get_all_bookmarks(self, user_id) -> List[int]:
-    #     stmt = select(Bookmark.page).where(Bookmark.user_id == user_id)
-    #     result = await self.session.execute(stmt)
-    #     result = [i[0] for i in result.all()]
-    #     return result

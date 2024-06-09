@@ -28,7 +28,4 @@ class User(Base):
         if self.subscribe_expire is None:
             return True
         tz = pytz.timezone(settings.timezone)
-
-        print(datetime.now(pytz.timezone(settings.timezone)))
-        print(tz.localize(self.subscribe_expire))
-        return datetime.now(pytz.timezone(settings.timezone)) >= tz.localize(self.subscribe_expire)
+        return datetime.now(tz) >= tz.localize(self.subscribe_expire)
