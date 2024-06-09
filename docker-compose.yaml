@@ -84,9 +84,9 @@ services:
     restart: always
     #command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
     environment:
-      POSTGRES_DB: ${PG_DB:postgres}
-      POSTGRES_USER: ${PG_USER:postgres}
-      POSTGRES_PASSWORD: ${PG_PASSWORD:postgres}
+      POSTGRES_DB: ${PG_DB:-postgres}
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
       PGDATA: /var/lib/postgresql/data
     volumes:
       - database:/var/lib/postgresql/data
