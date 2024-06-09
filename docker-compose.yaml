@@ -29,7 +29,7 @@ services:
       - .env
     environment:
       REDIS_DSN: "redis://redis:6379/0"
-    entrypoint: ["uvicorn", "--host", "0.0.0.0", "uploader:app"]
+    entrypoint: [ "uvicorn", "--host", "0.0.0.0", "uploader:app" ]
 
   uploader-worker:
     build:
@@ -43,7 +43,7 @@ services:
       - .env
     environment:
       REDIS_DSN: "redis://redis:6379/0"
-    entrypoint: ["taskiq", "worker", "uploader:task_broker"]
+    entrypoint: [ "taskiq", "worker", "uploader:task_broker" ]
 
   redis:
     image: redis:7.2.4-alpine3.19
@@ -59,13 +59,40 @@ services:
       TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
       TELEGRAM_LOCAL: "1"
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8081"]
+      test: [ "CMD", "nc", "-z", "localhost", "8081" ]
       interval: 1m
       timeout: 10s
       retries: 3
     volumes:
       - telegram-bot-api-data:/var/lib/telegram-bot-api
 
+  postgres:
+    image: postgres:alpine3.20
+    restart: always
+    #command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - database:/var/lib/postgresql/data
+#    ports:
+#      - '127.0.0.1:5432:5432'
+
+  pgadmin4:
+    image: elestio/pgadmin:REL-8_8
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PG_WEB_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PG_WEB_PASSWORD}
+      PGADMIN_LISTEN_PORT: 8080
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./pgadmin.json:/pgadmin4/servers.json
+
 volumes:
   telegram-bot-api-data:
   cache:
+  database:

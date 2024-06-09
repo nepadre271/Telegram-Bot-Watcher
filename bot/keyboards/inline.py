@@ -6,13 +6,13 @@ from core.schemes.movie.kinopoisk import SearchResponse
 from bot.settings import settings
 
 
-def unsub() -> InlineKeyboardMarkup:
+def create_sub_block(callback_data: str) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(
         text="Подписаться на канал", url=settings.chat_url
     )
     kb.button(
-        text="Начать просмотр", callback_data="get_started"
+        text="Начать просмотр", callback_data=callback_data
     )
     kb.adjust(1)
     return kb.as_markup()

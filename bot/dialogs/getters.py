@@ -6,9 +6,13 @@ from aiogram_dialog import (
     DialogManager,
 )
 from dependency_injector.wiring import Provide, inject
+from aiogram import types
 from loguru import logger
 
 from bot.dialogs.keyboards import get_next_page
+from bot.settings import settings
+from bot.utils import is_user_subscribed, check_admin_status
+from core.repositories import UserRepository, SubscribeRepository
 from bot.dialogs.const import MOVIES_LIMIT
 from core.services import MovieService
 from bot.containers import Container
@@ -91,8 +95,61 @@ async def serias_getter(dialog_manager: DialogManager, movie_service: MovieServi
 
 @logger.catch()
 @inject
-async def genres_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
+async def genres_getter(
+        dialog_manager: DialogManager,
+        movie_service: MovieService = Provide[Container.movie_service],
+        **_kwargs
+):
     genres = await movie_service.get_genres()
     return {
         "genres": genres
+    }
+
+
+@inject
+async def account_getter(
+        dialog_manager: DialogManager,
+        user_repository: UserRepository = Provide[Container.user_repository],
+        **_kwargs
+):
+    text = []
+    if isinstance(dialog_manager.event, types.Message):
+        user_id = dialog_manager.event.chat.id
+    else:
+        user_id = dialog_manager.event.message.chat.id
+
+    user = await user_repository.get(user_id)
+    is_admin = check_admin_status(user)
+    if is_admin:
+        text.append("Статус: Администратор")
+
+    user_sub_to_group = await is_user_subscribed(dialog_manager.event.bot, user_id, settings.chat_id)
+    text.append(f"Подписка на группу: {'✔' if user_sub_to_group else '❌'}")
+    text.append(f"Просмотров осталось: {'♾' if is_admin else user.views_left}")
+
+    if is_admin:
+        text.append(f"Подписка действительна до ♾")
+    elif user.is_subscribe_expire() is False:
+        text.append(f"Подписка действительна до {user.subscribe_expire.strftime('%d.%m.%Y %H:%M')} по мск")
+    else:
+        text.append(f"Подписка недействительна")
+
+    invite_count = await user_repository.invites_count(user)
+    text.append(f"Пользователей приглашено: {invite_count}")
+
+    return {
+        "text": "\n".join(text)
+    }
+
+
+@inject
+async def subscribes_getter(
+        dialog_manager: DialogManager,
+        subscribe_repository: SubscribeRepository = Provide[Container.subscribe_repository],
+        **_kwargs
+):
+    subscribes = await subscribe_repository.all()
+    logger.debug(f"{subscribes=}")
+    return {
+        "subscribes": subscribes
     }

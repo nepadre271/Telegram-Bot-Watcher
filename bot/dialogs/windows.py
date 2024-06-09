@@ -6,11 +6,11 @@ from aiogram_dialog import (
 )
 from aiogram_dialog.widgets.kbd import (
     NextPage, PrevPage, Row,
-    ScrollingGroup, Select, SwitchTo, Button
+    ScrollingGroup, Select, SwitchTo, Button, Back
 )
 from aiogram_dialog.widgets.text import Const, Format
 from bot.dialogs import selected, const, getters, keyboards
-from bot.states import DialogSG, DialogSelectGenres
+from bot.states import DialogSG, DialogSelectGenres, DialogAccount
 
 video_select_dialog = Dialog(
     Window(
@@ -104,4 +104,21 @@ genres_select_dialog = Dialog(
         state=DialogSelectGenres.SELECT_GENRE,
         getter=getters.genres_getter
     ),
+)
+
+account_dialog = Dialog(
+    Window(
+        Format("{text}"),
+        keyboards.get_account_main_keyboard(),
+        state=DialogAccount.MAIN,
+        getter=getters.account_getter
+    ),
+    Window(
+        Const("Выберите подписку"),
+        keyboards.get_subscribes_keyboard(),
+        keyboards.get_subscribes_keyboard_scroller(),
+        Back(Const("К аккаунту")),
+        state=DialogAccount.SELECT_SUBSCRIBE,
+        getter=getters.subscribes_getter
+    )
 )

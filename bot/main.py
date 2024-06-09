@@ -19,18 +19,20 @@ def bot_factory() -> Bot:
 
     try:
         if socket.gethostbyname("telegram-bot-api"):
-            api_backend = TelegramAPIServer.from_base("http://telegram-bot-api:8081", is_local=True)
+            api_backend = TelegramAPIServer.from_base(settings.telegram_api, is_local=True)
             session = AiohttpSession(api=api_backend)
     except socket.gaierror:
         pass
 
-    bot = Bot(token=settings.tg_token, session=session)
+    bot = Bot(token=settings.telegram_token, session=session)
     return bot
 
 
 def init_container():
     container = Container()
     container.config.redis_dsn.from_value(settings.redis_dsn)
+    container.config.database_dsn.from_value(settings.database_url)
+
     container.config.uploader_url.from_value(settings.uploader_url)
     container.config.kinopoisk_token.from_value(settings.kinopoisk_token)
     container.config.kinoclub_token.from_value(settings.kinoclub_token)
@@ -53,6 +55,7 @@ async def init_bot():
 
     dp.include_router(windows.video_select_dialog)
     dp.include_router(windows.genres_select_dialog)
+    dp.include_router(windows.account_dialog)
     setup_dialogs(dp)
 
     await bot.delete_webhook(drop_pending_updates=True)

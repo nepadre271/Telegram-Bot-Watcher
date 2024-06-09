@@ -9,3 +9,8 @@ class DialogSG(StatesGroup):
 
 class DialogSelectGenres(StatesGroup):
     SELECT_GENRE = State()
+
+
+class DialogAccount(StatesGroup):
+    MAIN = State()
+    SELECT_SUBSCRIBE = State()

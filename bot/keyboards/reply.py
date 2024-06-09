@@ -12,7 +12,8 @@ def main_menu() -> ReplyKeyboardMarkup:
         KeyboardButton(text="Рекомендации")
     )
     kb.row(
-        KeyboardButton(text="Инструкция")
+        KeyboardButton(text="Аккаунт"),
+        KeyboardButton(text="Инструкция"),
     )
 
     return kb.as_markup(resize_keyboard=True)
