@@ -42,6 +42,9 @@ def can_watch(func):
             await query.message.answer("\n".join(text), reply_markup=markup)
             return
 
+        if settings.disable_sub_system:
+            return await func(query, callback_data, **kwargs)
+
         if user.join_to_group is None and all(check_sub_chats):
             await user_repository.group_subscribe_toggle(user)
             await user_repository.update_views_count(user, 20)

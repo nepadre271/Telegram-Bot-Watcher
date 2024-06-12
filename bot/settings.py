@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     uploader_url: str = Field("http://localhost:8000")
     database_dsn: str = Field("sqlite+aiosqlite:///bot.db")
     timezone: str = Field("europe/moscow")
+    disable_sub_system: bool = Field(False)
     pwd: Path = Field(Path(__file__).parent.parent.resolve())
 
 
