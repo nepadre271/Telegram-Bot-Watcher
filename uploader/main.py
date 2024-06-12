@@ -1,19 +1,21 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from taskiq import TaskiqEvents, TaskiqDepends, Context, SimpleRetryMiddleware
+from taskiq import TaskiqEvents, TaskiqDepends, Context, SimpleRetryMiddleware, TaskiqState
 from taskiq_redis import RedisAsyncResultBackend, ListQueueBroker
 from faststream.redis.fastapi import RedisRouter
-from redis.asyncio import Redis, from_url
+from redis.asyncio import Redis, from_url, ConnectionPool
 from aiogram.enums import ParseMode
 from fastapi import FastAPI
-from loguru import logger
 
 from uploader import storage, service
 from uploader.settings import settings
 from uploader.bot import bot_factory
 from core.schemes.uploader import UploadMovieRequest
 from core.repositories.movie import KinoClubAPI
+from uploader.limiter import ConcurencyLimiter
+from uploader.logger import logger
+
 
 redis: Redis = from_url(settings.redis_dsn, decode_responses=True)
 users_queue = storage.Queue(redis, "UserQueue")
@@ -32,36 +34,40 @@ task_broker.with_middlewares(
         default_retry_count=3
     )
 )
-    
 
-@task_broker.task(retry_on_error=True)
+
+@task_broker.task()
 async def upload_movie(
-    data: UploadMovieRequest,
-    context: Annotated[Context, TaskiqDepends()]
+        data: UploadMovieRequest,
+        context: Annotated[Context, TaskiqDepends()],
+        limiter: None = TaskiqDepends(ConcurencyLimiter(
+            limit=settings.task_limit_per_worker, counter_name="upload_movie.RATELIMIT"
+        ))
 ):
+    logger.info(f"Start task with data: {data}")
     await movie_storage.set(f"task:{data.get_movie_id()}", context.message.task_id)
-        
+
     kinoclub_api = KinoClubAPI(settings.kinoclub_token, redis)
     movie = await kinoclub_api.get_movie(data.movie_id, disable_cache=True)
-    
+
     # Загрузить и преобразовать файл
     file_path = await service.download_video(movie, data)
-        
+
     # Сохранить в telegram
     file_id = await service.upload_video_to_telegram(movie, data, file_path)
-    
+
     # Удалить временный файл
     service.remove_folder(file_path.parent)
-    
+
     await movie_storage.set(data.get_movie_id(), file_id)
-    
+
     logger.info(f"Movie[{data.movie_id}] uploaded in telegram, {file_id=}")
     data.file_id = file_id
     data = data.model_dump_json()
     await message_router.broker.publisher(
         channel="movie_uploaded"
     ).publish(data)
-    
+
 
 async def send_notification(data: str):
     data: UploadMovieRequest = UploadMovieRequest.model_validate_json(data)
@@ -75,10 +81,10 @@ async def send_notification(data: str):
             user_id = await users_queue.pop(data.get_movie_id())
         except IndexError:
             break
-        
+
         if user_id is None or skip_users.get(user_id, None):
             continue
-        
+
         skip_users[user_id] = 1
         try:
             if data.type == "film":
@@ -103,13 +109,15 @@ async def send_notification(data: str):
 
 
 @task_broker.on_event(TaskiqEvents.WORKER_STARTUP)
-async def on_startup(_):
+async def on_startup(state: TaskiqState):
     await message_router.broker.start()
+    state.redis_pool = ConnectionPool.from_url(settings.redis_dsn)
 
 
 @task_broker.on_event(TaskiqEvents.WORKER_SHUTDOWN)
-async def on_shutdown(_):
+async def on_shutdown(state: TaskiqState):
     await redis.aclose()
+    await state.redis_pool.disconnect()
 
 
 @asynccontextmanager
@@ -126,7 +134,7 @@ app = FastAPI(lifespan=lifespan)
 async def process_request(data: UploadMovieRequest):
     await users_queue.add(data.get_movie_id(), data.user_id)
     logger.info(f"Add user:{data.user_id} to queue Movie[{data.movie_id}]")
-    
+
     file_id = await movie_storage.get(data.get_movie_id())
     if file_id is not None:
         logger.info(f"Movie[{data.get_movie_id()}] found in storage, {file_id=}")
@@ -150,7 +158,7 @@ async def process_request(data: UploadMovieRequest):
         ready = await task_backend.is_result_ready(task_id)
         if ready is False:
             return
-        
+
         task = await task_backend.get_result(task_id)
         if task.is_err:
             logger.info(f"Error in task[{task_id}] -> {task.error}")
@@ -161,8 +169,8 @@ async def process_request(data: UploadMovieRequest):
             data = data.model_dump_json()
             await send_notification(data)
             return
-        
+
     task = await upload_movie.kiq(data)
-    
+
     logger.info(f"Task[{task.task_id}] start upload Movie[{data.get_movie_id()}] to telegram")
     await bot.session.close()

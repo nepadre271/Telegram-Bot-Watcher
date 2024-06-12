@@ -6,10 +6,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore", case_sensitive=False)
     telegram_token: str = Field(...)
     telegram_timeout: int = Field(60 * 15)
-    telegram_api: str = Field("http://telegram-bot-api:8081")
+    telegram_api: str = Field("http://telegram-bot-api:8081", alias="TELEGRAM_API_URL")
     kinoclub_token: str = Field(...)
-    temp_chat_id: str = Field(...)
+    temp_chat_id: str = Field(..., alias="TELEGRAM_TEMP_CHAT_ID")
     redis_dsn: str = Field("redis://localhost:6379/0")
+    task_limit_per_worker: int = Field(2)
     
 
 settings = Settings()
