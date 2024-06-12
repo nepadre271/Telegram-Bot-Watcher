@@ -8,9 +8,10 @@ from bot.settings import settings
 
 def create_sub_block(callback_data: str) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(
-        text="Подписаться на канал", url=settings.chat_url
-    )
+    for chat_id in settings.telegram.chats_id:
+        kb.button(
+            text=f"Подписаться на канал {chat_id}", url=f"https://t.me/{chat_id[1:]}"
+        )
     kb.button(
         text="Начать просмотр", callback_data=callback_data
     )

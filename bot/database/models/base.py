@@ -10,6 +10,7 @@ from sqlalchemy import Dialect
 from sqlalchemy import BigInteger
 from sqlalchemy.ext.compiler import compiles
 
+
 class Base(DeclarativeBase, AsyncAttrs):
     pass
 

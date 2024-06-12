@@ -123,8 +123,9 @@ async def account_getter(
     if is_admin:
         text.append("Статус: Администратор")
 
-    user_sub_to_group = await is_user_subscribed(dialog_manager.event.bot, user_id, settings.chat_id)
-    text.append(f"Подписка на группу: {'✔' if user_sub_to_group else '❌'}")
+    for chat_id in settings.telegram.chats_id:
+        user_sub_to_group = await is_user_subscribed(dialog_manager.event.bot, user_id, chat_id)
+        text.append(f"Подписка на группу {chat_id}: {'✔' if user_sub_to_group else '❌'}")
     text.append(f"Просмотров осталось: {'♾' if is_admin else user.views_left}")
 
     if is_admin:
@@ -149,7 +150,6 @@ async def subscribes_getter(
         **_kwargs
 ):
     subscribes = await subscribe_repository.all()
-    logger.debug(f"{subscribes=}")
     return {
         "subscribes": subscribes
     }

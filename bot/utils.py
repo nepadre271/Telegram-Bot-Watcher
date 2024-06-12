@@ -15,6 +15,6 @@ async def is_user_subscribed(bot: Bot, user_id: int, channel_id: str) -> bool:
 
 def check_admin_status(user: User) -> bool:
     return any([
-        user.id in settings.telegram_admins,
+        user.id in settings.telegram.admins,
         user.is_admin,
     ])

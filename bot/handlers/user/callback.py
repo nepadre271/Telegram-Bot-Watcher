@@ -20,34 +20,38 @@ def can_watch(func):
     async def wrapper(
             query: types.CallbackQuery,
             callback_data: UploadMovieCallbackFactory,
-            bot: Bot,
             user_repository: UserRepository = Provide[Container.user_repository],
             **kwargs
     ):
         user_data = query.message.chat
-
+        bot: Bot = kwargs.get("bot")
         user = await user_repository.get(user_data.id)
         if check_admin_status(user):
             logger.debug(f"Admin: User[{user_data.username}] can watch")
-            return await func(query, callback_data, bot, **kwargs)
+            return await func(query, callback_data, **kwargs)
 
-        check_sub_chat = await is_user_subscribed(bot, user.id, settings.chat_id)
-        if check_sub_chat is False:
-            text = "Для продолжения бесплатного просмотра подпишитесь на группу"
+        text = ["Для продолжения бесплатного просмотра подпишитесь на группы:"]
+        check_sub_chats = []
+        for chat_id in settings.telegram.chats_id:
+            joined = await is_user_subscribed(bot, user.id, chat_id)
+            check_sub_chats.append(joined)
+            text.append(f"{'✔' if joined else '❌'} {chat_id}")
+
+        if all(check_sub_chats) is False:
             markup = create_sub_block(callback_data.pack())
-            await query.message.answer(text, reply_markup=markup)
+            await query.message.answer("\n".join(text), reply_markup=markup)
             return
 
-        if user.join_to_group is None and check_sub_chat:
+        if user.join_to_group is None and all(check_sub_chats):
             await user_repository.group_subscribe_toggle(user)
             await user_repository.update_views_count(user, 20)
-            logger.debug(f"Пользователь[{user_data.username}:{user_data.id}] подписался на группу")
+            logger.debug(f"Пользователь[{user_data.username}:{user_data.id}] подписался на группы")
 
         if user.is_subscribe_expire() and user.views_left <= 0:
             await query.message.answer("Кина не будет 🌚👍\nПригласи друга или купи подписку")
             return
 
-        return await func(query, callback_data, bot, **kwargs)
+        return await func(query, callback_data, **kwargs)
     return wrapper
 
 

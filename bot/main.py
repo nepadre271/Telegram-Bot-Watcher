@@ -19,12 +19,12 @@ def bot_factory() -> Bot:
 
     try:
         if socket.gethostbyname("telegram-bot-api"):
-            api_backend = TelegramAPIServer.from_base(settings.telegram_api, is_local=True)
+            api_backend = TelegramAPIServer.from_base(settings.telegram.api, is_local=True)
             session = AiohttpSession(api=api_backend)
     except socket.gaierror:
         pass
 
-    bot = Bot(token=settings.telegram_token, session=session)
+    bot = Bot(token=settings.telegram.token, session=session)
     return bot
 
 

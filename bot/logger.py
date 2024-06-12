@@ -3,6 +3,8 @@ import inspect
 
 from loguru import logger
 
+from bot.settings import settings
+
 
 class InterceptHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
@@ -26,5 +28,10 @@ logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=Tru
 logging.getLogger('aiogram.event').setLevel(logging.DEBUG)
 logging.getLogger('aiogram-dialog').setLevel(logging.DEBUG)
 logging.getLogger('aiogram').setLevel(logging.DEBUG)
-
 logger.disable("httpx")
+
+logs_path = settings.pwd / "logs"
+logs_path.mkdir(666, exist_ok=True)
+
+logger.add(logs_path / "all.log")
+logger.add(logs_path / "payments.log", filter=lambda record: "payments" in record["extra"])
