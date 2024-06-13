@@ -24,12 +24,12 @@ class User(Base):
     invite_from = Column(GUID(), nullable=True, default=None, index=True)
     payments_history = relationship("PaymentsHistory", back_populates="user")
 
-    def is_subscribe_expire(self):
+    def is_subscribe_expire(self) -> bool:
         if self.subscribe_expire is None:
             return True
         tz = pytz.timezone(settings.timezone)
 
         try:
             return datetime.now(tz) >= tz.localize(self.subscribe_expire)
-        finally:
+        except TypeError:
             return datetime.now(tz) >= self.subscribe_expire

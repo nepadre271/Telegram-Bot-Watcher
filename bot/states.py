@@ -2,7 +2,9 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 class DialogSG(StatesGroup):
+    WAIT_NAME_INPUT = State()
     SELECT_MOVIE = State()
+    SHOW_POSTER = State()
     SELECT_SEASON = State()
     SELECT_SERIA = State()
 

@@ -2,6 +2,7 @@ from typing import Any
 
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from dependency_injector.wiring import Provide, inject
+from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog import DialogManager
 from aiogram import types
 from loguru import logger
@@ -30,32 +31,31 @@ async def on_movie_select(
         await callback.answer(message_text)
         return
 
+    manager.dialog_data["movie_id"] = movie.id
+    await manager.next()
+
+
+@logger.catch()
+@inject
+async def on_watch_btn_selected(
+        callback: CallbackQuery,
+        button: Button,
+        manager: DialogManager,
+        movie_service: MovieService = Provide[Container.movie_service]
+):
+    movie = await movie_service.get(manager.dialog_data["movie_id"])
+
     if movie.type != "film":
-        manager.dialog_data["movie_id"] = movie.id
         await manager.next()
         return
 
-    await callback.answer(f"Выбран фильм: {movie.name}")
-    message_text = f"<b>{movie.type.verbose}</b>: {movie.name}\n\n<b>Описание</b>:\n{movie.full_description}"[:1024]
-
-    logger.info(
-        f"Обработчик process_movie_callback отправил сообщение с информацией о '{movie.name}' (id:{movie.id})")
-    image = types.URLInputFile(str(movie.poster))
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(
-            text="Начать просмотр",
-            callback_data=UploadMovieCallbackFactory(
-                id=movie.id
-            ).pack()
-        )
-    ]])
-
-    await callback.message.answer_photo(
-        photo=image,
-        caption=message_text,
-        parse_mode="html",
-        reply_markup=keyboard
+    callback_data = UploadMovieCallbackFactory(
+        id=movie.id
+    )
+    await process_movie_callback(
+        callback,
+        callback_data,
+        bot=callback.bot
     )
 
 

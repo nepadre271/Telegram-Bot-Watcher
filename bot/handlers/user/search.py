@@ -1,5 +1,7 @@
 from aiogram_dialog import DialogManager, StartMode
 from dependency_injector.wiring import inject, Provide
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.context import FSMContext
 from aiogram import Router, F, types
 from loguru import logger
 
@@ -13,9 +15,10 @@ router = Router()
 
 
 @router.message(F.text.lower() == 'поиск по названию🔎')
-async def search_by_name(message: types.Message):
+async def search_by_name(message: types.Message, state: FSMContext):
     logger.info(f"Пользователь {message.from_user.username} вызвал 'Поиск по названию'")
     await message.answer("Введите название фильма или сериала, который вы хотите найти:")
+    await state.set_state(DialogSG.WAIT_NAME_INPUT)
 
 
 @router.message(F.text.lower() == 'по жанрам')
@@ -46,7 +49,7 @@ async def search_by_recommendation(
     )
 
 
-@router.message()
+@router.message(StateFilter(DialogSG.WAIT_NAME_INPUT))
 @logger.catch()
 @inject
 async def get_search_results(
@@ -60,7 +63,7 @@ async def get_search_results(
     if not results:
         await message.answer("К сожалению, по вашему запросу ничего не найдено.")
         return
-    
+
     await dialog_manager.start(
         DialogSG.SELECT_MOVIE, mode=StartMode.RESET_STACK,
         data={"query": query, "data": results}

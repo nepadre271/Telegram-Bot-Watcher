@@ -1,4 +1,4 @@
-from . import callback, start, search, instruction, account, subscribe
+from . import callback, start, search, instruction, account, subscribe, blackhole
 
 routes = [
     start.router,
@@ -7,4 +7,6 @@ routes = [
     subscribe.router,
     search.router,
     callback.router,
+
+    blackhole.router
 ]

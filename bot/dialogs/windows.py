@@ -1,5 +1,6 @@
 from operator import itemgetter
 
+from aiogram.enums import ContentType
 from aiogram_dialog import (
     Dialog,
     Window
@@ -8,6 +9,7 @@ from aiogram_dialog.widgets.kbd import (
     NextPage, PrevPage, Row,
     ScrollingGroup, Select, SwitchTo, Button, Back
 )
+from aiogram_dialog.widgets.media import StaticMedia
 from aiogram_dialog.widgets.text import Const, Format
 from bot.dialogs import selected, const, getters, keyboards
 from bot.states import DialogSG, DialogSelectGenres, DialogAccount
@@ -34,6 +36,14 @@ video_select_dialog = Dialog(
         ),
         getter=getters.movies_getter,
         state=DialogSG.SELECT_MOVIE,
+    ),
+    Window(
+        StaticMedia(url=Format("{photo}"), type=ContentType.PHOTO),
+        Format("{description}"),
+        Button(Const("Начать просмотр"), id="show_poster_btn", on_click=selected.on_watch_btn_selected),
+        getter=getters.movie_poster_getter,
+        state=DialogSG.SHOW_POSTER,
+        parse_mode="HTML"
     ),
     Window(
         Const("Выберите Сезон"),
