@@ -31,5 +31,5 @@ class User(Base):
 
         try:
             return datetime.now(tz) >= tz.localize(self.subscribe_expire)
-        except TypeError:
+        except (TypeError, ValueError):
             return datetime.now(tz) >= self.subscribe_expire
