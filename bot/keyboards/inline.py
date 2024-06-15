@@ -76,12 +76,4 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
             )
         )
 
-    # if seasons_count > 1:
-    #     kb.row(
-    #         InlineKeyboardButton(
-    #             text="К выбору сезонов",
-    #             callback_data=SelectSeasonCallbackFactory(id=movie.id).pack()
-    #         )
-    #     )
-
     return kb.as_markup()

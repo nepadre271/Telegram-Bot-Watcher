@@ -1,1 +1,1 @@
-from .movie import UploadMovieCallbackFactory, SelectSeasonCallbackFactory
+from .movie import UploadMovieCallbackFactory

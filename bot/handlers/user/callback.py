@@ -3,9 +3,9 @@ from aiogram_dialog import StartMode, DialogManager
 from aiogram import Router, types, Bot
 from loguru import logger
 
-from bot.schemes import UploadMovieCallbackFactory, SelectSeasonCallbackFactory
 from core.services import UploaderService, MovieService
 from core.schemes.uploader import UploadMovieRequest
+from bot.schemes import UploadMovieCallbackFactory
 from bot.keyboards.inline import create_sub_block
 from core.repositories import UserRepository
 from bot.utils import check_admin_status
@@ -95,19 +95,3 @@ async def process_movie_callback(
     except Exception as ex:
         logger.error(str(ex), exc_info=True)
         return
-
-
-@router.callback_query(SelectSeasonCallbackFactory.filter())
-@logger.catch()
-async def select_season_callback(
-    query: types.CallbackQuery,
-    callback_data: SelectSeasonCallbackFactory,
-    dialog_manager: DialogManager,
-    **kwargs
-):
-    await dialog_manager.start(
-        DialogSG.SELECT_SEASON, mode=StartMode.RESET_STACK,
-        data={
-            "movie_id": callback_data.id
-        }
-    )

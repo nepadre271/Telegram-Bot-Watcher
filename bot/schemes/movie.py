@@ -6,7 +6,3 @@ class UploadMovieCallbackFactory(CallbackData, prefix="up"):
     id: int = Field(...)
     season: int | None = Field(None)
     seria: int | None = Field(None)
-
-
-class SelectSeasonCallbackFactory(CallbackData, prefix="ss"):
-    id: int = Field(...)
