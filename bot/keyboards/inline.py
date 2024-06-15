@@ -59,7 +59,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
     if current_season > 1 and current_seria == 1:
         kb.row(
             InlineKeyboardButton(
-                text="Следующий сезон",
+                text="Предыдущий сезон",
                 callback_data=UploadMovieCallbackFactory(
                     id=movie.id, season=current_season - 1, seria=1
                 ).pack()
@@ -69,7 +69,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
     if seasons_count > current_season and current_seria == series_count:
         kb.row(
             InlineKeyboardButton(
-                text="Предыдущий сезон",
+                text="Следующий сезон",
                 callback_data=UploadMovieCallbackFactory(
                     id=movie.id, season=current_season + 1, seria=1
                 ).pack()
