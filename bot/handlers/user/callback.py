@@ -3,7 +3,7 @@ from aiogram_dialog import StartMode, DialogManager
 from aiogram import Router, types, Bot
 from loguru import logger
 
-from bot.schemes import UploadMovieCallbackFactory, SelectSeasonCallbackFactory, SelectSeriaCallbackFactory
+from bot.schemes import UploadMovieCallbackFactory, SelectSeasonCallbackFactory
 from core.services import UploaderService, MovieService
 from core.schemes.uploader import UploadMovieRequest
 from bot.keyboards.inline import create_sub_block
