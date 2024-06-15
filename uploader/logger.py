@@ -26,8 +26,8 @@ class InterceptHandler(logging.Handler):
 logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 logging.getLogger("taskiq.dependencies.ctx").setLevel(logging.ERROR)
 
-# for name in ("taskiq.receiver.receiver", "taskiq.receiver.params_parser"):
-#     logging.getLogger(name).disabled = True
-
+logger.disable("taskiq.kicker")
 logger.disable("taskiq.receiver.receiver")
 logger.disable("taskiq.receiver.params_parser")
+logger.disable("httpx._client")
+logger.disable("httpcore._trace")

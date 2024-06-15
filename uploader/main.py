@@ -4,7 +4,8 @@ from typing import Annotated
 from taskiq import TaskiqEvents, TaskiqDepends, Context, SimpleRetryMiddleware, TaskiqState
 from taskiq_redis import RedisAsyncResultBackend, ListQueueBroker
 from faststream.redis.fastapi import RedisRouter
-from redis.asyncio import Redis, from_url, ConnectionPool
+from redis.asyncio import Redis, from_url
+from aiogram.types import BufferedInputFile
 from aiogram.enums import ParseMode
 from fastapi import FastAPI
 
@@ -13,7 +14,7 @@ from uploader.settings import settings
 from uploader.bot import bot_factory
 from core.schemes.uploader import UploadMovieRequest
 from core.repositories.movie import KinoClubAPI
-from uploader.limiter import ConcurencyLimiter
+from uploader.limiter import concurrency_limiter_handler
 from uploader.logger import logger
 
 
@@ -32,17 +33,17 @@ task_broker.with_result_backend(task_backend)
 task_broker.with_middlewares(
     SimpleRetryMiddleware(
         default_retry_count=3
-    )
+    ),
 )
 
 
-@task_broker.task()
+@task_broker.task(
+    retry_on_error="true"
+)
+@concurrency_limiter_handler(limit_per_worker=settings.task_limit_per_worker)
 async def upload_movie(
         data: UploadMovieRequest,
-        context: Annotated[Context, TaskiqDepends()],
-        limiter: None = TaskiqDepends(ConcurencyLimiter(
-            limit=settings.task_limit_per_worker, counter_name="upload_movie.RATELIMIT"
-        ))
+        context: Annotated[Context, TaskiqDepends()]
 ):
     logger.info(f"Start task with data: {data}")
     await movie_storage.set(f"task:{data.get_movie_id()}", context.message.task_id)
@@ -92,14 +93,14 @@ async def send_notification(data: str):
                     user_id, data.file_id,
                     supports_streaming=True, width=1280, height=720,
                     caption=f"<b>{movie.name}</b>",
-                    parse_mode=ParseMode.HTML
+                    parse_mode=ParseMode.HTML,
                 )
             else:
                 await bot.send_video(
                     user_id, data.file_id,
                     supports_streaming=True, width=1280, height=720,
                     caption=f"<b>{movie.name}</b> \nСезон: {data.season} Серия: {data.seria}",
-                    parse_mode=ParseMode.HTML
+                    parse_mode=ParseMode.HTML,
                 )
             logger.debug(f"Send video[{data.file_id}] for user[{user_id}]")
         finally:
@@ -111,13 +112,11 @@ async def send_notification(data: str):
 @task_broker.on_event(TaskiqEvents.WORKER_STARTUP)
 async def on_startup(state: TaskiqState):
     await message_router.broker.start()
-    state.redis_pool = ConnectionPool.from_url(settings.redis_dsn)
 
 
 @task_broker.on_event(TaskiqEvents.WORKER_SHUTDOWN)
 async def on_shutdown(state: TaskiqState):
     await redis.aclose()
-    await state.redis_pool.disconnect()
 
 
 @asynccontextmanager
