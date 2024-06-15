@@ -39,7 +39,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
     if current_seria > 1:
         series_nav.append(
             InlineKeyboardButton(
-                text=f"««« Серия {series[current_seria - 2].number}",
+                text=f"« Серия {series[current_seria - 2].number}",
                 callback_data=UploadMovieCallbackFactory(
                     id=movie.id, season=current_season, seria=current_seria - 1
                 ).pack()
@@ -48,7 +48,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
     if series_count > current_seria:
         series_nav.append(
             InlineKeyboardButton(
-                text=f"Серия {series[current_seria].number} »»»",
+                text=f"Серия {series[current_seria].number} »",
                 callback_data=UploadMovieCallbackFactory(
                     id=movie.id, season=current_season, seria=current_seria + 1
                 ).pack()
@@ -59,7 +59,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
     if current_season > 1 and current_seria == 1:
         kb.row(
             InlineKeyboardButton(
-                text=movie.seasons[current_season-2].title,
+                text="Следующий сезон",
                 callback_data=UploadMovieCallbackFactory(
                     id=movie.id, season=current_season - 1, seria=1
                 ).pack()
@@ -69,19 +69,19 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
     if seasons_count > current_season and current_seria == series_count:
         kb.row(
             InlineKeyboardButton(
-                text=movie.seasons[current_season].title,
+                text="Предыдущий сезон",
                 callback_data=UploadMovieCallbackFactory(
                     id=movie.id, season=current_season + 1, seria=1
                 ).pack()
             )
         )
 
-    if seasons_count > 1:
-        kb.row(
-            InlineKeyboardButton(
-                text="К выбору сезонов",
-                callback_data=SelectSeasonCallbackFactory(id=movie.id).pack()
-            )
-        )
+    # if seasons_count > 1:
+    #     kb.row(
+    #         InlineKeyboardButton(
+    #             text="К выбору сезонов",
+    #             callback_data=SelectSeasonCallbackFactory(id=movie.id).pack()
+    #         )
+    #     )
 
     return kb.as_markup()

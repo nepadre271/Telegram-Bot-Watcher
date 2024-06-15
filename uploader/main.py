@@ -82,8 +82,12 @@ async def send_notification(data: str):
     if movie.type == "film":
         caption = f"<b>{movie.name}</b>"
     else:
-        caption = f"<b>{movie.name}</b> \nСезон: {data.season} Серия: {data.seria}"
+        caption = (f"<b>{movie.name}</b> \nСезон: {data.season} "
+                   f"Серия: {data.seria} из {len(movie.seasons[data.season-1].series)}")
 
+    caption = "\n\n".join((
+        caption, f"Смотрите любимые сериалы в {settings.telegram_bot_id}"
+    ))
     while (await users_queue.length(data.get_movie_id())) > 0:
         try:
             user_id = await users_queue.pop(data.get_movie_id())

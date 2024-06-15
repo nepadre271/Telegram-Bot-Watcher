@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     telegram_token: str = Field(...)
     telegram_timeout: int = Field(60 * 15)
     telegram_api: str = Field("http://telegram-bot-api:8081", alias="TELEGRAM_API_URL")
+    telegram_bot_id: str = Field(..., alias="TELEGRAM_BOT_ID")
     kinoclub_token: str = Field(...)
     temp_chat_id: str = Field(..., alias="TELEGRAM_TEMP_CHAT_ID")
     redis_dsn: str = Field("redis://localhost:6379/0")
