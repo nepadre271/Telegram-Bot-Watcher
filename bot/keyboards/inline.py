@@ -3,8 +3,8 @@ from operator import attrgetter
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.schemes import SelectSeasonCallbackFactory, UploadMovieCallbackFactory
 from core.schemes.uploader import UploadMovieRequest
+from bot.schemes import UploadMovieCallbackFactory
 from core.schemes.movie.kinoclub import Movie
 from bot.settings import settings
 
