@@ -8,6 +8,5 @@ class UploadMovieCallbackFactory(CallbackData, prefix="up"):
     seria: int | None = Field(None)
 
 
-class SelectMovieCallbackFactory(CallbackData, prefix="select"):
+class SelectSeasonCallbackFactory(CallbackData, prefix="ss"):
     id: int = Field(...)
-

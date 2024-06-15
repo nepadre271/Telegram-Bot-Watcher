@@ -60,7 +60,7 @@ async def movies_getter(dialog_manager: DialogManager, movie_service: MovieServi
 @inject
 async def seasons_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
     logger.debug(dialog_manager.dialog_data)
-    movie_id = dialog_manager.dialog_data["movie_id"]
+    movie_id = dialog_manager.dialog_data.get("movie_id", None) or dialog_manager.start_data.get("movie_id")
     movie = await movie_service.get(movie_id)
 
     if movie is None:
@@ -169,7 +169,6 @@ async def movie_poster_getter(
     movie = await movie_service.get(movie_id)
 
     message_text = f"<b>{movie.type.verbose}</b>: {movie.name}\n\n<b>Описание</b>:\n{movie.full_description}"
-    # image = types.URLInputFile(str(movie.poster))
 
     return {
         "description": f"{message_text[:1021]}..." if len(message_text) >= 1024 else message_text,

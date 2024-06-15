@@ -1,8 +1,11 @@
+from operator import attrgetter
+
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.schemes import PageCallbackFactory, SelectMovieCallbackFactory
-from core.schemes.movie.kinopoisk import SearchResponse
+from bot.schemes import SelectSeasonCallbackFactory, UploadMovieCallbackFactory
+from core.schemes.uploader import UploadMovieRequest
+from core.schemes.movie.kinoclub import Movie
 from bot.settings import settings
 
 
@@ -19,39 +22,66 @@ def create_sub_block(callback_data: str) -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
-def create_movie_buttons(data: SearchResponse, query_hash: str) -> InlineKeyboardMarkup:
-    navigation_buttons = []
+def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMarkup | None:
     kb = InlineKeyboardBuilder()
+    if movie.type == "film":
+        return None
 
-    for movie in data.movies:
-        button_text = f"{movie.name} ({movie.year})"
-        callback_data = SelectMovieCallbackFactory(id=movie.id).pack()
-        kb.row(InlineKeyboardButton(text=button_text, callback_data=callback_data))
+    current_seria = data.seria
+    current_season = data.season
 
-    current_page = data.page
-    if current_page > 1:
-        navigation_buttons.append(
+    series = movie.seasons[current_season-1].series
+    series.sort(key=attrgetter("number"))
+    series_count = len(series)
+    seasons_count = len(movie.seasons)
+
+    series_nav = []
+    if current_seria > 1:
+        series_nav.append(
             InlineKeyboardButton(
-                text="« Назад", 
-                callback_data=PageCallbackFactory(
-                    number=current_page - 1, 
-                    query_hash=query_hash
+                text=f"Серия {series[current_seria - 2].number}",
+                callback_data=UploadMovieCallbackFactory(
+                    id=movie.id, season=current_season, seria=current_seria - 1
+                ).pack()
+            )
+        )
+    if current_seria > series_count:
+        series_nav.append(
+            InlineKeyboardButton(
+                text=f"Серия {series[current_seria].number}",
+                callback_data=UploadMovieCallbackFactory(
+                    id=movie.id, season=current_season, seria=current_seria + 1
+                ).pack()
+            )
+        )
+    kb.row(*series_nav)
+
+    if current_season > 1 and current_seria == 1:
+        kb.row(
+            InlineKeyboardButton(
+                text=movie.seasons[current_season-2].title,
+                callback_data=UploadMovieCallbackFactory(
+                    id=1, season=current_season - 1, seria=1
                 ).pack()
             )
         )
 
-    if current_page < data.pages:
-        navigation_buttons.append(
+    if seasons_count > current_season and current_seria == series_count:
+        kb.row(
             InlineKeyboardButton(
-                text="Далее »", 
-                callback_data=PageCallbackFactory(
-                    number=current_page + 1, 
-                    query_hash=query_hash
+                text=movie.seasons[current_season].title,
+                callback_data=UploadMovieCallbackFactory(
+                    id=1, season=current_season + 1, seria=1
                 ).pack()
             )
         )
 
-    if navigation_buttons:
-        kb.row(*navigation_buttons)
+    if seasons_count > 1:
+        kb.row(
+            InlineKeyboardButton(
+                text="К выбору сезонов",
+                callback_data=SelectSeasonCallbackFactory(id=1).pack()
+            )
+        )
 
     return kb.as_markup()

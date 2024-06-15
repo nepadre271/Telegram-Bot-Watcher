@@ -5,16 +5,16 @@ from taskiq import TaskiqEvents, TaskiqDepends, Context, SimpleRetryMiddleware, 
 from taskiq_redis import RedisAsyncResultBackend, ListQueueBroker
 from faststream.redis.fastapi import RedisRouter
 from redis.asyncio import Redis, from_url
-from aiogram.types import BufferedInputFile
 from aiogram.enums import ParseMode
 from fastapi import FastAPI
 
-from uploader import storage, service
-from uploader.settings import settings
-from uploader.bot import bot_factory
-from core.schemes.uploader import UploadMovieRequest
-from core.repositories.movie import KinoClubAPI
 from uploader.limiter import concurrency_limiter_handler
+from core.schemes.uploader import UploadMovieRequest
+from bot.keyboards.inline import create_movie_nav
+from core.repositories.movie import KinoClubAPI
+from uploader.settings import settings
+from uploader import storage, service
+from uploader.bot import bot_factory
 from uploader.logger import logger
 
 
@@ -74,9 +74,16 @@ async def send_notification(data: str):
     data: UploadMovieRequest = UploadMovieRequest.model_validate_json(data)
     kinoclub_api = KinoClubAPI(settings.kinoclub_token, redis)
     movie = await kinoclub_api.get_movie(data.movie_id)
-
     skip_users = dict()
     bot = bot_factory()
+
+    reply_markup = create_movie_nav(movie, data)
+
+    if movie.type == "film":
+        caption = f"<b>{movie.name}</b>"
+    else:
+        caption = f"<b>{movie.name}</b> \nСезон: {data.season} Серия: {data.seria}"
+
     while (await users_queue.length(data.get_movie_id())) > 0:
         try:
             user_id = await users_queue.pop(data.get_movie_id())
@@ -88,20 +95,12 @@ async def send_notification(data: str):
 
         skip_users[user_id] = 1
         try:
-            if data.type == "film":
-                await bot.send_video(
-                    user_id, data.file_id,
-                    supports_streaming=True, width=1280, height=720,
-                    caption=f"<b>{movie.name}</b>",
-                    parse_mode=ParseMode.HTML,
-                )
-            else:
-                await bot.send_video(
-                    user_id, data.file_id,
-                    supports_streaming=True, width=1280, height=720,
-                    caption=f"<b>{movie.name}</b> \nСезон: {data.season} Серия: {data.seria}",
-                    parse_mode=ParseMode.HTML,
-                )
+            await bot.send_video(
+                user_id, data.file_id,
+                supports_streaming=True, width=1280, height=720,
+                caption=caption, reply_markup=reply_markup,
+                parse_mode=ParseMode.HTML,
+            )
             logger.debug(f"Send video[{data.file_id}] for user[{user_id}]")
         finally:
             pass
@@ -139,7 +138,6 @@ async def process_request(data: UploadMovieRequest):
         logger.info(f"Movie[{data.get_movie_id()}] found in storage, {file_id=}")
         data.file_id = file_id
         data = data.model_dump_json()
-        await send_notification(data)
         await movie_publisher.publish(data)
         return
 
@@ -166,7 +164,7 @@ async def process_request(data: UploadMovieRequest):
             file_id = task.return_value
             data.file_id = file_id
             data = data.model_dump_json()
-            await send_notification(data)
+            await movie_publisher.publish(data)
             return
 
     task = await upload_movie.kiq(data)
