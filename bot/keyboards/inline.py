@@ -39,7 +39,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
     if current_seria > 1:
         series_nav.append(
             InlineKeyboardButton(
-                text=f"Серия {series[current_seria - 2].number}",
+                text=f"««« Серия {series[current_seria - 2].number}",
                 callback_data=UploadMovieCallbackFactory(
                     id=movie.id, season=current_season, seria=current_seria - 1
                 ).pack()
@@ -48,7 +48,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
     if series_count > current_seria:
         series_nav.append(
             InlineKeyboardButton(
-                text=f"Серия {series[current_seria].number}",
+                text=f"Серия {series[current_seria].number} »»»",
                 callback_data=UploadMovieCallbackFactory(
                     id=movie.id, season=current_season, seria=current_seria + 1
                 ).pack()
@@ -80,7 +80,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
         kb.row(
             InlineKeyboardButton(
                 text="К выбору сезонов",
-                callback_data=SelectSeasonCallbackFactory(id=1).pack()
+                callback_data=SelectSeasonCallbackFactory(id=movie.id).pack()
             )
         )
 
