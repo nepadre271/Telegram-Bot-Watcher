@@ -61,7 +61,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
             InlineKeyboardButton(
                 text=movie.seasons[current_season-2].title,
                 callback_data=UploadMovieCallbackFactory(
-                    id=1, season=current_season - 1, seria=1
+                    id=movie.id, season=current_season - 1, seria=1
                 ).pack()
             )
         )
@@ -71,7 +71,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
             InlineKeyboardButton(
                 text=movie.seasons[current_season].title,
                 callback_data=UploadMovieCallbackFactory(
-                    id=1, season=current_season + 1, seria=1
+                    id=movie.id, season=current_season + 1, seria=1
                 ).pack()
             )
         )
