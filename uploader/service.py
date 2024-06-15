@@ -33,7 +33,7 @@ async def download_video(movie: kinoclub.Movie, data: UploadMovieRequest) -> Pat
 
     # Загрузить и преобразовать файл
     process = await asyncio.create_subprocess_exec(
-        "yt-dlp", "-f", "bv[height<=720]+wa[language=ru]", "--embed-thumbnail", "--user-agent",
+        "yt-dlp", "-f", "bv[height<=720]+wa[language=ru]", "--user-agent",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.80 Safari/537.36", "-N", "16",
         "--no-progress", "-o", str(file_path), str(url), stderr=asyncio.subprocess.PIPE
     )

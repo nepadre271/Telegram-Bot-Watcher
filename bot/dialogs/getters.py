@@ -60,11 +60,16 @@ async def movies_getter(dialog_manager: DialogManager, movie_service: MovieServi
 @inject
 async def seasons_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
     logger.debug(dialog_manager.dialog_data)
-    movie_id = dialog_manager.dialog_data.get("movie_id", None) or dialog_manager.start_data.get("movie_id")
+    if _id := dialog_manager.start_data.get("movie_id", None):
+        movie_id = _id
+    else:
+        movie_id = dialog_manager.dialog_data.get("movie_id", None)
     movie = await movie_service.get(movie_id)
 
     if movie is None:
-        return []
+        return {
+            "seasons": []
+        }
 
     seasons = [{"number": number, "title": season.title} for number, season in enumerate(movie.seasons, start=1)]
 

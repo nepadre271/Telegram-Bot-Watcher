@@ -45,7 +45,7 @@ def create_movie_nav(movie: Movie, data: UploadMovieRequest) -> InlineKeyboardMa
                 ).pack()
             )
         )
-    if current_seria > series_count:
+    if series_count > current_seria:
         series_nav.append(
             InlineKeyboardButton(
                 text=f"Серия {series[current_seria].number}",
