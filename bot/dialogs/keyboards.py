@@ -2,7 +2,8 @@ import operator
 
 from aiogram.types import CallbackQuery
 from aiogram.utils.deep_linking import create_start_link
-from aiogram_dialog.widgets.kbd import Multiselect, Keyboard, ScrollingGroup, NextPage, PrevPage, Row, Button, Select, Next
+from aiogram_dialog.widgets.kbd import Multiselect, Keyboard, ScrollingGroup, NextPage, PrevPage, Row, Button, Select, \
+    Next
 from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog.widgets.text import Format, Const
 from aiogram_dialog import DialogManager
@@ -96,10 +97,11 @@ def get_account_main_keyboard() -> Keyboard:
         Next(Const("Купить подписку"), id="acc_sub")
     )
 
+
 def get_subscribes_keyboard() -> Keyboard:
     return ScrollingGroup(
         Select(
-            Format("{item.name}"),
+            Format("{item.name} ({item.amount} руб.)"),
             id="subscribe",
             item_id_getter=operator.attrgetter("id"),
             items="subscribes",
@@ -117,4 +119,3 @@ def get_subscribes_keyboard_scroller() -> Keyboard:
         PrevPage(scroll="scroll_subscribes", id="__s_pager_prev__", when=hide_back_button()),
         NextPage(scroll="scroll_subscribes", id="__s_pager_next__", when=hide_next_button()),
     )
-
