@@ -67,3 +67,8 @@ class UserRepository:
         result = await self.session.execute(statement)
         count = result.scalar()
         return count
+
+    async def change_admin_status(self, user: User, status: bool = True) -> bool:
+        user.is_admin = status
+        await self.session.commit()
+        return user.is_admin

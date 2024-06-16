@@ -1,18 +1,21 @@
 from operator import itemgetter
 
-from aiogram.enums import ContentType
+from aiogram.enums import ContentType, ParseMode
 from aiogram_dialog import (
     Dialog,
     Window
 )
+from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import (
     NextPage, PrevPage, Row,
     ScrollingGroup, Select, SwitchTo, Button, Back
 )
 from aiogram_dialog.widgets.media import StaticMedia
 from aiogram_dialog.widgets.text import Const, Format
+from magic_filter import F
+
 from bot.dialogs import selected, const, getters, keyboards
-from bot.states import DialogSG, DialogSelectGenres, DialogAccount
+from bot.states import DialogSG, DialogSelectGenres, DialogAccount, DialogAdmin
 
 video_select_dialog = Dialog(
     Window(
@@ -131,4 +134,56 @@ account_dialog = Dialog(
         state=DialogAccount.SELECT_SUBSCRIBE,
         getter=getters.subscribes_getter
     )
+)
+
+admin_dialog = Dialog(
+    Window(
+        Const("Управление"),
+        keyboards.get_admin_main_keyboard(),
+        state=DialogAdmin.MAIN,
+        getter=getters.admin_manager_getter
+    ),
+    Window(
+        Const("Управление подписками"),
+        keyboards.get_subscribes_keyboard(on_click=selected.on_sub_edit_selected),
+        keyboards.get_subscribes_keyboard_scroller(),
+        keyboards.get_switch_to_admin_sub_add(),
+        keyboards.get_keyboard_to_admin_main(),
+        state=DialogAdmin.SELECT_SUBSCRIBE,
+        getter=getters.subscribes_getter
+    ),
+    Window(
+        Const("Введите название подписки"),
+        TextInput(id="sub_name", on_success=selected.on_text_input),
+        keyboards.get_admin_add_sub_cancel(),
+        state=DialogAdmin.SUBSCRIBE_INPUT_NAME_FIELD,
+    ),
+    Window(
+        Const("Введите цену"),
+        TextInput(id="sub_amount", on_success=selected.on_text_input),
+        keyboards.get_admin_add_sub_cancel(),
+        state=DialogAdmin.SUBSCRIBE_INPUT_AMOUNT_FIELD,
+    ),
+    Window(
+        Const("Введите количество дней"),
+        TextInput(id="sub_days", on_success=selected.on_text_input),
+        keyboards.get_admin_add_sub_cancel(),
+        state=DialogAdmin.SUBSCRIBE_INPUT_DAYS_FIELD,
+    ),
+    Window(
+        Const("Изменение подписки\n"),
+        Format("{text}", when=F["edit"]),
+        Format("{new_text}"),
+        keyboards.get_admin_sub_edit(),
+        keyboards.get_keyboard_to_admin_main(),
+        state=DialogAdmin.EDIT_SUBSCRIBE,
+        getter=getters.admin_edit_sub_getter,
+        parse_mode=ParseMode.HTML
+    ),
+    Window(
+        Const("Введите новое значение"),
+        TextInput(id="subscribe_field_edit", on_success=selected.on_text_input),
+        SwitchTo(text=Const("Отмена"), state=DialogAdmin.EDIT_SUBSCRIBE, id="sub_edit_back"),
+        state=DialogAdmin.SUBSCRIBE_EDIT_FIELD,
+    ),
 )

@@ -22,8 +22,9 @@ async def search_by_name(message: types.Message, state: FSMContext):
 
 
 @router.message(F.text.lower() == 'по жанрам')
-async def search_by_genre(message: types.Message, dialog_manager: DialogManager):
+async def search_by_genre(message: types.Message, dialog_manager: DialogManager, state: FSMContext):
     logger.info(f"Пользователь {message.from_user.username} вызвал 'Поиск по жанрам'")
+    await state.set_state(state=None)
     await dialog_manager.start(
         DialogSelectGenres.SELECT_GENRE, mode=StartMode.RESET_STACK
     )
@@ -35,6 +36,7 @@ async def search_by_genre(message: types.Message, dialog_manager: DialogManager)
 async def search_by_recommendation(
         message: types.Message,
         dialog_manager: DialogManager,
+        state: FSMContext,
         movie_service: MovieService = Provide[Container.movie_service]
 ):
     logger.info(f"Пользователь {message.from_user.username} вызвал 'Рекомендации'")
@@ -43,6 +45,7 @@ async def search_by_recommendation(
         await message.answer("К сожалению, по вашему запросу ничего не найдено.")
         return
 
+    await state.set_state(state=None)
     await dialog_manager.start(
         DialogSG.SELECT_MOVIE, mode=StartMode.RESET_STACK,
         data={"type": "recommendations", "data": results}
@@ -54,7 +57,7 @@ async def search_by_recommendation(
 @inject
 async def get_search_results(
         message: types.Message,
-        dialog_manager: DialogManager,
+        dialog_manager: DialogManager, state: FSMContext,
         movie_service: MovieService = Provide[Container.movie_service]
 ):
     query = message.text
@@ -64,6 +67,7 @@ async def get_search_results(
         await message.answer("К сожалению, по вашему запросу ничего не найдено.")
         return
 
+    await state.set_state(state=None)
     await dialog_manager.start(
         DialogSG.SELECT_MOVIE, mode=StartMode.RESET_STACK,
         data={"query": query, "data": results}

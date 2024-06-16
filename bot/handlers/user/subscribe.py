@@ -22,6 +22,10 @@ async def process_buy_command(
         callback: CallbackQuery, widget: Any, manager: DialogManager, item_id: str,
         subscribe_repository: SubscribeRepository = Provide[Container.subscribe_repository],
 ):
+    if settings.disable_sub_system is True:
+        await callback.message.answer("В данный момент возможность приобрести подписку недоступна, попробуйте позже")
+        return
+
     subscribe = await subscribe_repository.get(int(item_id))
     if subscribe.visible is False:
         await callback.message.answer("Данная подписка не доступна")
@@ -54,6 +58,15 @@ async def process_shipping_query(shipping_query: types.ShippingQuery, bot: Bot):
 
 @router.pre_checkout_query()
 async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery, bot: Bot):
+    if settings.disable_sub_system is True:
+        try:
+            await bot.answer_pre_checkout_query(
+                pre_checkout_query.id, ok=False,
+                error_message="В данный момент возможность приобрести подписку недоступна, попробуйте позже"
+            )
+        finally:
+            return
+
     try:
         await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
     finally:

@@ -10,8 +10,8 @@ from aiogram import Bot, Dispatcher
 from bot.containers import Container
 from bot.settings import settings
 from bot.dialogs import windows
-from bot.handlers import user
 from bot.logger import logger
+from bot import handlers
 
 
 def bot_factory() -> Bot:
@@ -51,11 +51,16 @@ async def init_bot():
     )
 
     dp = Dispatcher(storage=storage)
-    dp.include_routers(*user.routes)
+
+    dp.include_routers(*handlers.admin.routes)
+    dp.include_routers(*handlers.user.routes)
 
     dp.include_router(windows.video_select_dialog)
     dp.include_router(windows.genres_select_dialog)
     dp.include_router(windows.account_dialog)
+    dp.include_router(windows.admin_dialog)
+
+    dp.include_router(handlers.user.blackhole.router)
     setup_dialogs(dp)
 
     await bot.delete_webhook(drop_pending_updates=True)

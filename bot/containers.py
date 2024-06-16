@@ -6,13 +6,14 @@ from bot import database
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(modules=[
+        ".handlers.admin.op",
         ".handlers.user.start",
         ".handlers.user.search",
         ".handlers.user.callback",
         ".handlers.user.subscribe",
-        ".dialogs.getters",
         ".dialogs.selected",
-        ".dialogs.keyboards",
+        ".dialogs.getters",
+        ".utils",
         ".main",
         __name__
     ])

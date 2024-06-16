@@ -9,22 +9,24 @@ from dependency_injector.wiring import Provide, inject
 from aiogram import types
 from loguru import logger
 
-from bot.dialogs.keyboards import get_next_page
-from bot.settings import settings
-from bot.utils import is_user_subscribed, check_admin_status
 from core.repositories import UserRepository, SubscribeRepository
+from bot.utils import is_user_subscribed, check_admin_status
+from bot.dialogs.keyboards import get_next_page
 from bot.dialogs.const import MOVIES_LIMIT
 from core.services import MovieService
 from bot.containers import Container
+from bot.settings import settings
+from bot import states, schemes
 
 
 @logger.catch()
 @inject
-async def movies_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
+async def movies_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service],
+                        **_kwargs):
     data = dialog_manager.start_data
     logger.debug(f"{dialog_manager.start_data=}")
     page = get_next_page(dialog_manager, _kwargs, prefix="m")
-    
+
     search_result = data.get("data", None)
     if search_result is not None:
         search_result = copy.deepcopy(search_result)
@@ -33,7 +35,7 @@ async def movies_getter(dialog_manager: DialogManager, movie_service: MovieServi
         search_result = await movie_service.recommendations(page=page, limit=MOVIES_LIMIT)
     else:
         search_result = await movie_service.search(data["query"], page=page, limit=MOVIES_LIMIT)
-    
+
     movies = []
     if search_result is None:
         return {
@@ -58,7 +60,8 @@ async def movies_getter(dialog_manager: DialogManager, movie_service: MovieServi
 
 @logger.catch()
 @inject
-async def seasons_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service], **_kwargs):
+async def seasons_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service],
+                         **_kwargs):
     logger.debug(dialog_manager.dialog_data)
     if _id := dialog_manager.start_data.get("movie_id", None):
         movie_id = _id
@@ -93,7 +96,7 @@ async def serias_getter(
     if movie is None:
         return []
 
-    season = movie.seasons[season_number-1]
+    season = movie.seasons[season_number - 1]
     season.series.sort(key=attrgetter("number"))
     serias = [{"number": number, "title": seria.number} for number, seria in enumerate(season.series, start=1)]
 
@@ -148,7 +151,9 @@ async def account_getter(
     text.append(f"Пользователей приглашено: {invite_count}")
 
     return {
-        "text": "\n".join(text)
+        "text": "\n".join(text),
+        "is_admin": is_admin,
+        "sub_system_enable": not settings.disable_sub_system
     }
 
 
@@ -159,6 +164,7 @@ async def subscribes_getter(
         **_kwargs
 ):
     subscribes = await subscribe_repository.all()
+    subscribes.sort(key=attrgetter("days"), reverse=True)
     return {
         "subscribes": subscribes
     }
@@ -180,3 +186,83 @@ async def movie_poster_getter(
         "photo": str(movie.poster)
     }
 
+
+async def admin_manager_getter(
+        dialog_manager: DialogManager,
+        **_kwargs
+):
+    checkbox_sub_system = dialog_manager.find("admin_sub_system")
+    await checkbox_sub_system.set_checked(not settings.disable_sub_system)
+    return {}
+
+
+@inject
+async def admin_edit_sub_getter(
+        dialog_manager: DialogManager,
+        subscribe_repository: SubscribeRepository = Provide[Container.subscribe_repository],
+        **_kwargs
+):
+    logger.debug(f"{dialog_manager.dialog_data=}")
+    text_input = dialog_manager.find("subscribe_field_edit")
+    edit_field = dialog_manager.dialog_data.get("subscribe_field_edit", None)
+    edit_mode = dialog_manager.dialog_data.get("edit_mode", False)
+    edit = dialog_manager.dialog_data.get("edit", False)
+    if text_input is not None and edit_field is not None:
+        dialog_manager.dialog_data[edit_field] = text_input.get_value()
+        logger.debug(f"{text_input.get_value()=}")
+
+        del dialog_manager.dialog_data["subscribe_field_edit"]
+
+    logger.debug(f"{dialog_manager.dialog_data=}")
+    if edit is False:
+        if edit_mode is False:
+            dialog_manager.dialog_data['name'] = dialog_manager.find("sub_name").get_value()
+            dialog_manager.dialog_data['amount'] = dialog_manager.find("sub_amount").get_value()
+            dialog_manager.dialog_data['days'] = dialog_manager.find("sub_days").get_value()
+            dialog_manager.dialog_data['edit_mode'] = True
+
+        return {
+            "fields": [
+                schemes.EditField("Название", "name"),
+                schemes.EditField("Цена", "amount"),
+                schemes.EditField("Длительность", "days")
+            ],
+            "new_text": "\n".join([
+                "\n<b>Обновленные данные:</b>",
+                f"Название: {dialog_manager.dialog_data.get('name', '-')}",
+                f"Цена: {dialog_manager.dialog_data.get('amount', '-')} руб.",
+                f"Длительность: {dialog_manager.dialog_data.get('days', '-')}"
+            ]),
+            "edit": edit,
+        }
+
+    subscribe_id = dialog_manager.dialog_data.get("subscribe_id", None)
+    if subscribe_id is None:
+        await dialog_manager.switch_to(state=states.DialogAdmin.SELECT_SUBSCRIBE)
+        return
+
+    subscribe = await subscribe_repository.get(subscribe_id)
+    if subscribe is None:
+        await dialog_manager.switch_to(state=states.DialogAdmin.SELECT_SUBSCRIBE)
+        return
+
+    return {
+        "fields": [
+            schemes.EditField("Название", "name"),
+            schemes.EditField("Цена", "amount"),
+            schemes.EditField("Длительность", "days")
+        ],
+        "text": "\n".join([
+            "<b>Текущие данные:</b>",
+            f"Название: {subscribe.name}",
+            f"Цена: {subscribe.amount} руб.",
+            f"Длительность: {subscribe.days}"
+        ]),
+        "new_text": "\n".join([
+            "\n<b>Обновленные данные:</b>",
+            f"Название: {dialog_manager.dialog_data.get('name', '-')}",
+            f"Цена: {dialog_manager.dialog_data.get('amount', '-')} руб.",
+            f"Длительность: {dialog_manager.dialog_data.get('days', '-')}"
+        ]),
+        "edit": edit
+    }

@@ -7,6 +7,4 @@ routes = [
     subscribe.router,
     search.router,
     callback.router,
-
-    blackhole.router
 ]

@@ -1,16 +1,19 @@
 from typing import Any
 
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.enums import ParseMode
+from aiogram.types import CallbackQuery
+from aiogram.utils.deep_linking import create_start_link
 from dependency_injector.wiring import Provide, inject
-from aiogram_dialog.widgets.kbd import Button
-from aiogram_dialog import DialogManager
-from aiogram import types
+from aiogram_dialog.widgets.kbd import Button, ManagedCheckbox
+from aiogram_dialog import DialogManager, ChatEvent
 from loguru import logger
 
+from core.repositories import UserRepository, SubscribeRepository
 from bot.handlers.user.callback import process_movie_callback
 from bot.schemes import UploadMovieCallbackFactory
 from core.services import MovieService
 from bot.containers import Container
+from bot.settings import settings
 from bot import states
 
 
@@ -113,3 +116,130 @@ async def on_genres_search_clicked(
             }
         }
     )
+
+
+@inject
+async def on_ref_button_clicked(
+        callback: CallbackQuery, button: Button, manager: DialogManager,
+        user_repository: UserRepository = Provide[Container.user_repository]
+):
+    user_id = callback.message.chat.id
+    user = await user_repository.get(user_id)
+    link = await create_start_link(callback.message.bot, payload=f"ref:{user.ref}", encode=True)
+    await callback.message.answer(f"Ваша реф. ссылка <code>{link}</code>", parse_mode=ParseMode.HTML)
+
+
+async def on_sub_system_checkbox_click(event: ChatEvent, checkbox: ManagedCheckbox,
+                        manager: DialogManager):
+    system_status = not settings.disable_sub_system
+    settings.disable_sub_system = system_status
+
+    if system_status:
+        await event.message.answer("System: система подписок отключена ❌")
+    else:
+        await event.message.answer("System: система подписок включена ✔")
+
+
+async def on_sub_edit_selected(
+        callback: CallbackQuery, widget: Any,
+        manager: DialogManager, item_id: str
+):
+    manager.dialog_data["subscribe_id"] = int(item_id)
+    manager.dialog_data["edit"] = True
+    await manager.switch_to(state=states.DialogAdmin.EDIT_SUBSCRIBE)
+
+
+async def on_sub_edit_field_selected(
+        callback: CallbackQuery, widget: Any,
+        manager: DialogManager, item_id: str
+):
+    # fields = {
+    #     "name": states.DialogAdmin.SUBSCRIBE_INPUT_NAME_FIELD,
+    #     "amount": states.DialogAdmin.SUBSCRIBE_INPUT_AMOUNT_FIELD,
+    #     "days": states.DialogAdmin.SUBSCRIBE_INPUT_DAYS_FIELD
+    # }
+    manager.dialog_data["subscribe_field_edit"] = item_id
+    await manager.switch_to(
+        # state=states.DialogAdmin.SUBSCRIBE_EDIT_FIELD if manager.dialog_data.get("edit", False) else fields[item_id]
+        state=states.DialogAdmin.SUBSCRIBE_EDIT_FIELD
+    )
+
+
+async def on_text_input(event, widget, dialog_manager: DialogManager, *_):
+    if dialog_manager.dialog_data.get("edit") or dialog_manager.dialog_data.get("edit_mode"):
+        await dialog_manager.switch_to(state=states.DialogAdmin.EDIT_SUBSCRIBE)
+    else:
+        await dialog_manager.next()
+
+
+@inject
+async def on_sub_save_clicked(
+        callback: CallbackQuery, button: Button, manager: DialogManager,
+        subscribe_repository: SubscribeRepository = Provide[Container.subscribe_repository]
+):
+    data = manager.dialog_data
+
+    subscribe_id = data.get("subscribe_id")
+    subscribe = None
+
+    new_data = dict()
+    if subscribe_id:
+        subscribe = await subscribe_repository.get(subscribe_id)
+        new_data.update({
+            "name": subscribe.name,
+            "amount": subscribe.amount,
+            "days": subscribe.days
+        })
+
+    if name := data.get("name", None):
+        new_data["name"] = name
+
+    if amount := data.get("amount", None):
+        try:
+            new_data["amount"] = int(amount)
+        except ValueError:
+            await callback.message.answer(f"Ошибка поле: Цена должно не должно содержать символов")
+            return
+
+    if days := data.get("days", None):
+        try:
+            new_data["days"] = int(days)
+        except ValueError:
+            await callback.message.answer(f"Ошибка поле: Длительность должно не должно содержать символов")
+            return
+
+    await subscribe_repository.create(**new_data)
+    if subscribe:
+        await subscribe_repository.toggle_visibility(subscribe)
+
+    manager.dialog_data.clear()
+    await manager.switch_to(state=states.DialogAdmin.SELECT_SUBSCRIBE)
+
+
+@inject
+async def on_sub_delete_clicked(
+        callback: CallbackQuery, button: Button, manager: DialogManager,
+        subscribe_repository: SubscribeRepository = Provide[Container.subscribe_repository]
+):
+    subscribe_id = manager.dialog_data.get("subscribe_id", None)
+    if subscribe_id is None:
+        await callback.answer(text="Отсутствует subscribe_id")
+        await manager.switch_to(state=states.DialogAdmin.SELECT_SUBSCRIBE)
+        return
+
+    subscribe = await subscribe_repository.get(subscribe_id)
+    if subscribe is None:
+        await callback.answer(text=f"Подписка с id:{subscribe_id} не существует")
+        await manager.switch_to(state=states.DialogAdmin.SELECT_SUBSCRIBE)
+        return
+
+    await subscribe_repository.toggle_visibility(subscribe)
+    await callback.answer(text=f"Подписка с id:{subscribe_id} удалена")
+    manager.dialog_data.clear()
+    await manager.switch_to(state=states.DialogAdmin.SELECT_SUBSCRIBE)
+
+
+async def on_clicked_clear_data(
+        callback: CallbackQuery, button: Button, manager: DialogManager,
+):
+    manager.dialog_data.clear()

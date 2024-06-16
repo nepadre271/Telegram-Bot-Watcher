@@ -16,3 +16,13 @@ class DialogSelectGenres(StatesGroup):
 class DialogAccount(StatesGroup):
     MAIN = State()
     SELECT_SUBSCRIBE = State()
+
+
+class DialogAdmin(StatesGroup):
+    MAIN = State()
+    SELECT_SUBSCRIBE = State()
+    EDIT_SUBSCRIBE = State()
+    SUBSCRIBE_INPUT_NAME_FIELD = State()
+    SUBSCRIBE_INPUT_AMOUNT_FIELD = State()
+    SUBSCRIBE_INPUT_DAYS_FIELD = State()
+    SUBSCRIBE_EDIT_FIELD = State()
