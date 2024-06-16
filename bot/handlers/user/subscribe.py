@@ -86,7 +86,7 @@ async def process_successful_payment(
         payment_history_repository: PaymentHistoryRepository = Provide[Container.payments_history_repository],
 ):
     payment_logger.info(
-        f"PAYMENT_SUCCESSFUL: USER:{message.chat.id} "
+        f"PAYMENT_SUCCESSFUL_ENTER: USER:{message.chat.id} "
         f"AMOUNT:{message.successful_payment.total_amount // 100} "
         f"PAYLOAD:{message.successful_payment.invoice_payload}"
     )
@@ -102,4 +102,9 @@ async def process_successful_payment(
     await bot.send_message(
         message.chat.id,
         f"Подписка действительна до {sub_to.strftime('%d.%m.%Y %H:%M')}"
+    )
+    payment_logger.info(
+        f"PAYMENT_SUCCESSFUL_EXIT: USER:{message.chat.id} "
+        f"AMOUNT:{message.successful_payment.total_amount // 100} "
+        f"PAYLOAD:{message.successful_payment.invoice_payload}"
     )
