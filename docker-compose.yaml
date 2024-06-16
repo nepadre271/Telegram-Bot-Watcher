@@ -2,6 +2,7 @@ version: '3.7'
 
 services:
   movie-bot:
+    image: movie-bot
     build:
       context: .
       dockerfile: Dockerfile
@@ -19,13 +20,10 @@ services:
       UPLOADER_URL: 'http://uploader:8000'
 
   uploader:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: movie-bot
     restart: unless-stopped
     depends_on:
-      - telegram-bot-api
-      - redis
+      - movie-bot
     env_file:
       - .env
     environment:
@@ -33,13 +31,10 @@ services:
     entrypoint: [ "uvicorn", "--host", "0.0.0.0", "uploader:app" ]
 
   uploader-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: movie-bot
     restart: unless-stopped
     depends_on:
-      - telegram-bot-api
-      - redis
+      - movie-bot
     env_file:
       - .env
     environment:
@@ -47,9 +42,7 @@ services:
     entrypoint: [ "taskiq", "worker", "uploader:task_broker" ]
 
   migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: movie-bot
     depends_on:
       postgres:
         condition: service_healthy
