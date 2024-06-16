@@ -198,14 +198,17 @@ async def on_sub_save_clicked(
         try:
             new_data["amount"] = int(amount)
         except ValueError:
-            await callback.message.answer(f"Ошибка поле: Цена должно не должно содержать символов")
+            await callback.message.answer(f"Ошибка поле: Цена не должно содержать символов")
+            return
+        if new_data["amount"] < 60:
+            await callback.message.answer(f"Ошибка поле: Цена не может быть ниже 60 рублей")
             return
 
     if days := data.get("days", None):
         try:
             new_data["days"] = int(days)
         except ValueError:
-            await callback.message.answer(f"Ошибка поле: Длительность должно не должно содержать символов")
+            await callback.message.answer(f"Ошибка поле: Длительность не должно содержать символов")
             return
 
     await subscribe_repository.create(**new_data)
