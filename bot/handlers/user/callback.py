@@ -53,7 +53,7 @@ def can_watch(func):
             logger.debug(f"Пользователь[{user_data.username}:{user_data.id}] подписался на группы")
 
         if user.is_subscribe_expire() and user.views_left <= 0:
-            await query.message.answer("Кина не будет 🌚👍\nПригласи друга или купи подписку")
+            await query.message.answer("Чтобы продолжить просмотр, оформите подписку или пригласите друга.")
             return
 
         return await func(query, callback_data, **kwargs)
