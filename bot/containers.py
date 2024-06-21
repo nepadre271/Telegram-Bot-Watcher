@@ -11,6 +11,7 @@ class Container(containers.DeclarativeContainer):
         ".handlers.user.search",
         ".handlers.user.callback",
         ".handlers.user.subscribe",
+        ".middleware.user",
         ".dialogs.selected",
         ".dialogs.getters",
         ".utils",

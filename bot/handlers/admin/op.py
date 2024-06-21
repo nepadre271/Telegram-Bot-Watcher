@@ -1,6 +1,8 @@
 from aiogram import Router, F, types, filters
 from aiogram.enums import ParseMode
+from dependency_injector.wiring import Provide, inject
 
+from bot.containers import Container
 from core.repositories import UserRepository
 from bot.utils import only_admin_handler
 from bot.database.models import User
@@ -32,12 +34,13 @@ async def _op_handler(
 
 @router.message(F.text, filters.Command("op"))
 @only_admin_handler
+@inject
 async def op_handler(
         message: types.Message,
         command: filters.CommandObject,
+        user_repository: UserRepository = Provide[Container.user_repository],
         **kwargs
 ):
-    user_repository: UserRepository = kwargs["user_repository"]
     user = await _op_handler(message, command, user_repository)
     if user is None:
         return
@@ -47,12 +50,13 @@ async def op_handler(
 
 @router.message(F.text, filters.Command("deop"))
 @only_admin_handler
+@inject
 async def deop_handler(
         message: types.Message,
         command: filters.CommandObject,
+        user_repository: UserRepository = Provide[Container.user_repository],
         **kwargs
 ):
-    user_repository: UserRepository = kwargs["user_repository"]
     user = await _op_handler(message, command, user_repository)
     if user is None:
         return

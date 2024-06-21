@@ -51,12 +51,12 @@ async def process_buy_command(
     )
 
 
-@router.shipping_query()
+@router.shipping_query(flags={"skip_user_middleware": True})
 async def process_shipping_query(shipping_query: types.ShippingQuery, bot: Bot):
     await bot.answer_shipping_query(shipping_query.id, ok=True)
 
 
-@router.pre_checkout_query()
+@router.pre_checkout_query(flags={"skip_user_middleware": True})
 async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery, bot: Bot):
     if settings.disable_sub_system is True:
         try:
@@ -77,7 +77,7 @@ async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery,
         )
 
 
-@router.message(F.successful_payment)
+@router.message(F.successful_payment, flags={"skip_user_middleware": True})
 @logger.catch()
 @inject
 async def process_successful_payment(

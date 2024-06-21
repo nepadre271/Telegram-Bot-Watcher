@@ -28,7 +28,7 @@ async def _start_handler(message: Message):
     )
 
 
-@router.message(CommandStart(deep_link=True))
+@router.message(CommandStart(deep_link=True), flags={"skip_user_middleware": True})
 @inject
 async def cmd_start_ref(
         message: Message, command: CommandObject, bot: Bot,
@@ -59,15 +59,9 @@ async def cmd_start_ref(
 
 
 @router.message(Command("start"))
-@inject
 async def cmd_start_ref(
-        message: Message,
-        user_repository: UserRepository = Provide[Container.user_repository]
+        message: Message
 ):
     logger.info("Обработчик cmd_start вызван")
     await _start_handler(message)
-
-    user_id = message.from_user.id
-    await user_repository.get(user_id)
-
     logger.info("Обработчик cmd_start завершил работу")

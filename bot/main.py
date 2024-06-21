@@ -11,7 +11,7 @@ from bot.containers import Container
 from bot.settings import settings
 from bot.dialogs import windows
 from bot.logger import logger
-from bot import handlers
+from bot import handlers, middleware
 
 
 def bot_factory() -> Bot:
@@ -63,6 +63,9 @@ async def init_bot():
     dp.include_router(handlers.user.blackhole.router)
     setup_dialogs(dp)
 
+    dp.update.middleware(middleware.UserMiddleware())
+    dp.update.middleware(middleware.AdminMiddleware())
+    
     await bot.delete_webhook(drop_pending_updates=True)
     try:
         await dp.start_polling(bot)

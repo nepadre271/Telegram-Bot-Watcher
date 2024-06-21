@@ -94,6 +94,12 @@ video_select_dialog = Dialog(
             PrevPage(scroll="scroll_serias", id="__ser_pager_prev__", when=keyboards.hide_back_button(False)),
             NextPage(scroll="scroll_serias", id="__ser_pager_next__", when=keyboards.hide_next_button(False)),
         ),
+        Button(
+            Const("Загрузить весь сезон"),
+            on_click=selected.on_season_upload_clicked,
+            id="SeasonUpload",
+            when=F["is_admin"]
+        ),
         SwitchTo(
             Const("К выбору сезонов"),
             state=DialogSG.SELECT_SEASON,

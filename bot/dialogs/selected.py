@@ -1,11 +1,12 @@
 from typing import Any
+import asyncio
 
-from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery
+from aiogram_dialog.widgets.kbd import Button, ManagedCheckbox
 from aiogram.utils.deep_linking import create_start_link
 from dependency_injector.wiring import Provide, inject
-from aiogram_dialog.widgets.kbd import Button, ManagedCheckbox
 from aiogram_dialog import DialogManager, ChatEvent
+from aiogram.types import CallbackQuery
+from aiogram.enums import ParseMode
 from loguru import logger
 
 from core.repositories import UserRepository, SubscribeRepository
@@ -58,7 +59,7 @@ async def on_watch_btn_selected(
     await process_movie_callback(
         callback,
         callback_data,
-        bot=callback.bot
+        **manager.middleware_data
     )
 
 
@@ -91,7 +92,35 @@ async def on_seria_select(
         season=manager.dialog_data["season_number"],
         seria=manager.dialog_data["seria_number"]
     )
-    await process_movie_callback(query=callback, callback_data=callback_data, bot=callback.bot)
+    await process_movie_callback(
+        query=callback, callback_data=callback_data, **manager.middleware_data
+    )
+
+
+@logger.catch()
+@inject
+async def on_season_upload_clicked(
+        callback: CallbackQuery, widget: Any,
+        manager: DialogManager,
+        movie_service: MovieService = Provide[Container.movie_service]
+):
+    user = manager.middleware_data.get("user")
+    logger.debug(
+        f"User[{user.id}] start upload all series of season {manager.dialog_data['movie_id']}:{manager.dialog_data['season_number']}")
+
+    serial = await movie_service.get(manager.dialog_data["movie_id"])
+    season_number = manager.dialog_data["season_number"]
+
+    for number in range(1, len(serial.seasons[season_number - 1].series) + 1):
+        callback_data = UploadMovieCallbackFactory(
+            id=manager.dialog_data["movie_id"],
+            season=manager.dialog_data["season_number"],
+            seria=number
+        )
+        asyncio.create_task(process_movie_callback(
+            query=callback, callback_data=callback_data, **manager.middleware_data
+        ))
+    await callback.answer("Загрузка началась")
 
 
 async def on_genres_search_clicked(
@@ -130,7 +159,7 @@ async def on_ref_button_clicked(
 
 
 async def on_sub_system_checkbox_click(event: ChatEvent, checkbox: ManagedCheckbox,
-                        manager: DialogManager):
+                                       manager: DialogManager):
     system_status = not settings.disable_sub_system
     settings.disable_sub_system = system_status
 

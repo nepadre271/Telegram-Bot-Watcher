@@ -1,12 +1,8 @@
 from functools import wraps
 
-from dependency_injector.wiring import Provide, inject
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import Message
 from aiogram import Bot
 
-from core.repositories import UserRepository
-from bot.containers import Container
 from bot.database.models import User
 from bot.settings import settings
 
@@ -28,15 +24,12 @@ def check_admin_status(user: User) -> bool:
 
 def only_admin_handler(func):
     @wraps(func)
-    @inject
     async def wrapper(
-            *args, user_repository: UserRepository = Provide[Container.user_repository], **kwargs
+            *args, **kwargs
     ):
-        message: Message = args[0]
-        user = await user_repository.get(message.chat.id)
+        is_admin = kwargs.get("is_admin", False)
 
-        if check_admin_status(user):
-            kwargs["user_repository"] = user_repository
+        if is_admin:
             return await func(*args, **kwargs)
         return
     return wrapper

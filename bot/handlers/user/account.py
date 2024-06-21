@@ -8,7 +8,7 @@ from bot.states import DialogAccount
 router = Router()
 
 
-@router.message(F.text, filters.Command("id"))
+@router.message(F.text, filters.Command("id"), flags={"skip_user_middleware": True})
 async def id_handler(message: types.Message):
     await message.answer(
         f"ID: <code>{message.chat.id}</code>",

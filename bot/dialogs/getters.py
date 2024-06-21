@@ -101,7 +101,8 @@ async def serias_getter(
     serias = [{"number": number, "title": seria.number} for number, seria in enumerate(season.series, start=1)]
 
     return {
-        "serias": serias
+        "serias": serias,
+        "is_admin": dialog_manager.middleware_data.get("is_admin", False)
     }
 
 
@@ -124,19 +125,16 @@ async def account_getter(
         user_repository: UserRepository = Provide[Container.user_repository],
         **_kwargs
 ):
+    logger.debug(dialog_manager.middleware_data)
     text = []
-    if isinstance(dialog_manager.event, types.Message):
-        user_id = dialog_manager.event.chat.id
-    else:
-        user_id = dialog_manager.event.message.chat.id
 
-    user = await user_repository.get(user_id)
-    is_admin = check_admin_status(user)
+    user = dialog_manager.middleware_data.get("user")
+    is_admin = dialog_manager.middleware_data.get("is_admin")
     if is_admin:
         text.append("Статус: Администратор")
 
     for chat_id in settings.telegram.chats_id:
-        user_sub_to_group = await is_user_subscribed(dialog_manager.event.bot, user_id, chat_id)
+        user_sub_to_group = await is_user_subscribed(dialog_manager.event.bot, user.id, chat_id)
         text.append(f"Подписка на группу {chat_id}: {'✔' if user_sub_to_group else '❌'}")
     text.append(f"Просмотров осталось: {'♾' if is_admin else user.views_left}")
 

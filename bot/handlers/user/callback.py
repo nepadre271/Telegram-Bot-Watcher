@@ -1,5 +1,4 @@
 from dependency_injector.wiring import inject, Provide
-from aiogram_dialog import StartMode, DialogManager
 from aiogram import Router, types, Bot
 from loguru import logger
 
@@ -8,11 +7,10 @@ from core.schemes.uploader import UploadMovieRequest
 from bot.schemes import UploadMovieCallbackFactory
 from bot.keyboards.inline import create_sub_block
 from core.repositories import UserRepository
-from bot.utils import check_admin_status
+from bot.database.models.user import User
 from bot.utils import is_user_subscribed
 from bot.containers import Container
 from bot.settings import settings
-from bot.states import DialogSG
 
 router = Router()
 
@@ -27,8 +25,8 @@ def can_watch(func):
     ):
         user_data = query.message.chat
         bot: Bot = kwargs.get("bot")
-        user = await user_repository.get(user_data.id)
-        if check_admin_status(user):
+        user: User = kwargs.get("user")
+        if kwargs.get("is_admin", False):
             logger.debug(f"Admin: User[{user_data.username}] can watch")
             return await func(query, callback_data, **kwargs)
 
@@ -79,7 +77,7 @@ async def process_movie_callback(
         await query.message.answer("Извините, информация о фильме не найдена.")
         return
 
-    user = await user_repository.get(query.message.chat.id)
+    user: User = kwargs.get("user")
     if user.views_left > 0:
         await user_repository.update_views_count(user, -1)
 

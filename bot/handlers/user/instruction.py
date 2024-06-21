@@ -5,7 +5,7 @@ from loguru import logger
 router = Router()
 
 
-@router.message(F.text.lower() == 'инструкция')
+@router.message(F.text.lower() == 'инструкция', flags={"skip_user_middleware": True})
 async def get_instruction(message: Message):
     logger.info("Обработчик get_instruction вызван")
     text = """
