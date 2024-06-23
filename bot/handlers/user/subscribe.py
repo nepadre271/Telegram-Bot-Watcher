@@ -88,7 +88,9 @@ async def process_successful_payment(
     payment_logger.info(
         f"PAYMENT_SUCCESSFUL_ENTER: USER:{message.chat.id} "
         f"AMOUNT:{message.successful_payment.total_amount // 100} "
-        f"PAYLOAD:{message.successful_payment.invoice_payload}"
+        f"PAYLOAD:{message.successful_payment.invoice_payload} "
+        f"TELEGRAM_PAYMENT_CHARGE_ID:{message.successful_payment.telegram_payment_charge_id} "
+        f"PROVIDER_PAYMENT_CHARGE_ID:{message.successful_payment.provider_payment_charge_id} "
     )
     payload = json.loads(message.successful_payment.invoice_payload)
     subscribe_id = payload["subscribe_id"]
@@ -97,7 +99,11 @@ async def process_successful_payment(
     sub_to = await user_repository.update_subscribe(
         user, subscribe_time=timedelta(seconds=payload["subscribe_time"])
     )
-    await payment_history_repository.create(user.id, int(subscribe_id))
+    await payment_history_repository.create(
+        user.id, int(subscribe_id),
+        message.successful_payment.telegram_payment_charge_id,
+        message.successful_payment.provider_payment_charge_id
+    )
 
     await bot.send_message(
         message.chat.id,
@@ -106,5 +112,7 @@ async def process_successful_payment(
     payment_logger.info(
         f"PAYMENT_SUCCESSFUL_EXIT: USER:{message.chat.id} "
         f"AMOUNT:{message.successful_payment.total_amount // 100} "
-        f"PAYLOAD:{message.successful_payment.invoice_payload}"
+        f"PAYLOAD:{message.successful_payment.invoice_payload} "
+        f"TELEGRAM_PAYMENT_CHARGE_ID:{message.successful_payment.telegram_payment_charge_id} "
+        f"PROVIDER_PAYMENT_CHARGE_ID:{message.successful_payment.provider_payment_charge_id} "
     )

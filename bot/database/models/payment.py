@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, DateTime, Integer, ForeignKey
+from sqlalchemy import Column, BigInteger, DateTime, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -10,6 +10,8 @@ class PaymentsHistory(Base):
 
     id = Column(SLBigInteger, primary_key=True, autoincrement=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    telegram_payment_charge_id = Column(String(64))
+    provider_payment_charge_id = Column(String(64))
     subscribe_id = Column(Integer, ForeignKey("subscribes.id"))
     subscribe = relationship("Subscribe", back_populates="payments_history")
     user_id = Column(BigInteger, ForeignKey("users.id"), index=True)
