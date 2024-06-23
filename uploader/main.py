@@ -8,7 +8,6 @@ from redis.asyncio import Redis, from_url
 from aiogram.enums import ParseMode
 from fastapi import FastAPI
 
-from uploader.limiter import concurrency_limiter_handler
 from core.schemes.uploader import UploadMovieRequest
 from bot.keyboards.inline import create_movie_nav
 from core.repositories.movie import KinoClubAPI
@@ -40,7 +39,6 @@ task_broker.with_middlewares(
 @task_broker.task(
     retry_on_error="true"
 )
-@concurrency_limiter_handler(limit_per_worker=settings.task_limit_per_worker)
 async def upload_movie(
         data: UploadMovieRequest,
         context: Annotated[Context, TaskiqDepends()]

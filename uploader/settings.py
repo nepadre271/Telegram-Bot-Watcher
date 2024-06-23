@@ -11,7 +11,6 @@ class Settings(BaseSettings):
     kinoclub_token: str = Field(...)
     temp_chat_id: str = Field(..., alias="TELEGRAM_TEMP_CHAT_ID")
     redis_dsn: str = Field("redis://localhost:6379/0")
-    task_limit_per_worker: int = Field(2)
     
 
 settings = Settings()

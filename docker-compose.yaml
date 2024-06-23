@@ -39,7 +39,7 @@ services:
       - .env
     environment:
       REDIS_DSN: "redis://redis:6379/0"
-    entrypoint: [ "taskiq", "worker", "uploader:task_broker" ]
+    entrypoint: [ "taskiq", "worker", "--max-async-tasks", "${TASK_LIMIT_PER_WORKER:-2}", "uploader:task_broker" ]
 
   migrate:
     image: movie-bot
