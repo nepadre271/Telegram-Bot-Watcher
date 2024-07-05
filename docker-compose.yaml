@@ -90,27 +90,27 @@ services:
     ports:
       - '127.0.0.1:5432:5432'
 
-  metabase:
-    image: metabase/metabase:latest
-    volumes:
-      - /dev/urandom:/dev/random:ro
-      - ./metabase-data:/metabase-data
-    ports:
-      - "127.0.0.1:3000:3000"
-    environment:
-      MB_DB_TYPE: postgres
-      MB_DB_DBNAME: metabase
-      MB_DB_PORT: 5432
-      MB_DB_USER: ${PG_USER:-postgres}
-      MB_DB_PASS: ${PG_PASSWORD:-postgres}
-      MB_DB_HOST: postgres
-    depends_on:
-      - migrate
-    healthcheck:
-      test: curl --fail -I http://localhost:3000/api/health || exit 1
-      interval: 15s
-      timeout: 5s
-      retries: 5
+#  metabase:
+#    image: metabase/metabase:latest
+#    volumes:
+#      - /dev/urandom:/dev/random:ro
+#      - ./metabase-data:/metabase-data
+#    ports:
+#      - "127.0.0.1:3000:3000"
+#    environment:
+#      MB_DB_TYPE: postgres
+#      MB_DB_DBNAME: metabase
+#      MB_DB_PORT: 5432
+#      MB_DB_USER: ${PG_USER:-postgres}
+#      MB_DB_PASS: ${PG_PASSWORD:-postgres}
+#      MB_DB_HOST: postgres
+#    depends_on:
+#      - migrate
+#    healthcheck:
+#      test: curl --fail -I http://localhost:3000/api/health || exit 1
+#      interval: 15s
+#      timeout: 5s
+#      retries: 5
 
 volumes:
   telegram-bot-api-data:
