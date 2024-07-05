@@ -1,3 +1,3 @@
 from .user import UserMiddleware
-from .admin import AdminMiddleware
+from .admin import AdminMiddleware, OnlyAdminMiddleware
 

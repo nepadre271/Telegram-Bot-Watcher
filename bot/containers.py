@@ -52,6 +52,10 @@ class Container(containers.DeclarativeContainer):
         repositories.UserRepository,
         session=database_session
     )
+    user_action_repository = providers.Factory(
+        repositories.UserActionRepository,
+        session=database_session
+    )
     subscribe_repository = providers.Factory(
         repositories.SubscribeRepository,
         session=database_session

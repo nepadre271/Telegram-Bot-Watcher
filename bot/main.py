@@ -63,9 +63,15 @@ async def init_bot():
     dp.include_router(handlers.user.blackhole.router)
     setup_dialogs(dp)
 
-    dp.update.middleware(middleware.UserMiddleware())
-    dp.update.middleware(middleware.AdminMiddleware())
-    
+    dp.message.middleware.register(middleware.UserMiddleware())
+    dp.callback_query.middleware.register(middleware.UserMiddleware())
+
+    dp.message.middleware.register(middleware.AdminMiddleware())
+    dp.callback_query.middleware.register(middleware.AdminMiddleware())
+
+    windows.admin_dialog.message.middleware.register(middleware.OnlyAdminMiddleware())
+    windows.admin_dialog.callback_query.middleware.register(middleware.OnlyAdminMiddleware())
+
     await bot.delete_webhook(drop_pending_updates=True)
     try:
         await dp.start_polling(bot)

@@ -1,6 +1,6 @@
 from .base import Base
-from .user import User
 from .subscribe import Subscribe
+from .user import User, UserAction
 from .payment import PaymentsHistory
 
-__all__ = ["Base", "User", "Subscribe", "PaymentsHistory"]
+__all__ = ["Base", "User", "UserAction", "Subscribe", "PaymentsHistory"]

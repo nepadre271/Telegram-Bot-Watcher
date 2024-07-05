@@ -6,9 +6,9 @@ from core.services import UploaderService, MovieService
 from core.schemes.uploader import UploadMovieRequest
 from bot.schemes import UploadMovieCallbackFactory
 from bot.keyboards.inline import create_sub_block
+from bot.utils import is_user_subscribed, tracker
 from core.repositories import UserRepository
 from bot.database.models.user import User
-from bot.utils import is_user_subscribed
 from bot.containers import Container
 from bot.settings import settings
 
@@ -59,6 +59,7 @@ def can_watch(func):
 
 
 @router.callback_query(UploadMovieCallbackFactory.filter())
+@tracker("Movie: process upload")
 @can_watch
 @logger.catch()
 @inject
@@ -77,8 +78,20 @@ async def process_movie_callback(
         await query.message.answer("Извините, информация о фильме не найдена.")
         return
 
+    tracker_data = kwargs.get("tracker_data", {})
+    tracker_data["movie_name"] = movie.name
+    tracker_data["movie_id"] = movie.id
+    for line in movie.full_description.split("\n"):
+        if "Год выпуска:" in line:
+            tracker_data["year"] = line.replace("Год выпуска:", "").strip()
+            break
+    tracker_data["type"] = movie.type.value
+    if movie.type.value == "serial":
+        tracker_data["season"] = callback_data.season
+        tracker_data["seria"] = callback_data.seria
+
     user: User = kwargs.get("user")
-    if user.views_left > 0:
+    if user.views_left > 0 and user.is_subscribe_expire():
         await user_repository.update_views_count(user, -1)
 
     data = UploadMovieRequest(

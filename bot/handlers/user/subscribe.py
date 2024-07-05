@@ -1,6 +1,6 @@
 from datetime import timedelta
-import json
 from typing import Any
+import json
 
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager
@@ -11,16 +11,19 @@ from loguru import logger
 from core.repositories import UserRepository, PaymentHistoryRepository, SubscribeRepository
 from bot.containers import Container
 from bot.settings import settings
+from bot.utils import tracker
 
 router = Router()
 payment_logger = logger.bind(payments=True)
 
 
 @logger.catch()
+@tracker("Subscribe: process buy command")
 @inject
 async def process_buy_command(
         callback: CallbackQuery, widget: Any, manager: DialogManager, item_id: str,
         subscribe_repository: SubscribeRepository = Provide[Container.subscribe_repository],
+        **kwargs
 ):
     if settings.disable_sub_system is True:
         await callback.message.answer("В данный момент возможность приобрести подписку недоступна, попробуйте позже")
@@ -57,7 +60,8 @@ async def process_shipping_query(shipping_query: types.ShippingQuery, bot: Bot):
 
 
 @router.pre_checkout_query(flags={"skip_user_middleware": True})
-async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery, bot: Bot):
+@tracker("Subscribe: pre checkout query")
+async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery, bot: Bot, **kwargs):
     if settings.disable_sub_system is True:
         try:
             await bot.answer_pre_checkout_query(
@@ -78,12 +82,14 @@ async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery,
 
 
 @router.message(F.successful_payment, flags={"skip_user_middleware": True})
+@tracker("Subscribe: process successful payment")
 @logger.catch()
 @inject
 async def process_successful_payment(
         message: types.Message, bot: Bot,
         user_repository: UserRepository = Provide[Container.user_repository],
         payment_history_repository: PaymentHistoryRepository = Provide[Container.payments_history_repository],
+        **kwargs
 ):
     payment_logger.info(
         f"PAYMENT_SUCCESSFUL_ENTER: USER:{message.chat.id} "

@@ -1,36 +1,36 @@
 from datetime import datetime, timedelta
-import asyncio
+import json
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy_timescaledb.functions import Last
 from sqlalchemy import select, func
 import pytz
 
-from bot.database.models.user import User
+from bot.database.models.user import User, UserAction
+from core.repositories.base import BaseRepository
 from bot.settings import settings
 
 
-class UserRepository:
-    def __init__(self, session: AsyncSession):
-        self.session = session
-
-    def __del__(self):
-        loop = asyncio.get_event_loop()
-        asyncio.ensure_future(self.session.aclose(), loop=loop)
-
-    async def create(self, id: int, invite_from: int | None = None) -> User:
+class UserRepository(BaseRepository):
+    async def create(self, id: int, username: str = "", invite_from: int | None = None) -> User:
         user = User(
             id=id,
+            username=username,
             invite_from=invite_from
         )
         self.session.add(user)
         await self.session.commit()
         return user
 
-    async def get(self, id: int, invite_from: int | None = None) -> User:
+    async def get(self, id: int = 0, invite_from: int | None = None) -> User:
         user = await self.session.get(User, id)
         if not user:
-            user = await self.create(id, invite_from)
-        await self.session.commit()
+            user = await self.create(id, invite_from=invite_from)
+        return user
+
+    async def get_by_username(self, username: str) -> User | None:
+        statement = select(User).where(User.username == username)
+        query = await self.session.execute(statement)
+        user = query.scalar()
         return user
 
     async def get_by_ref(self, ref: str) -> User | None:
@@ -62,8 +62,13 @@ class UserRepository:
         await self.session.commit()
         return user.views_left
 
+    async def update_username(self, user: User, username: str) -> str:
+        user.username = username
+        await self.session.commit()
+        return user.username
+
     async def invites_count(self, user: User) -> int:
-        statement = select(func.count(User.id)).where(User.invite_from == user.ref)
+        statement = select(func.count(User.id)).where(User.invite_from == user.id)
         result = await self.session.execute(statement)
         count = result.scalar()
         return count
@@ -72,3 +77,14 @@ class UserRepository:
         user.is_admin = status
         await self.session.commit()
         return user.is_admin
+
+
+class UserActionRepository(BaseRepository):
+    async def create(self, user_id: int, event_name: str, params: dict):
+        action = UserAction(
+            user_id=user_id,
+            name=event_name[:128],
+            params=params
+        )
+        self.session.add(action)
+        await self.session.commit()

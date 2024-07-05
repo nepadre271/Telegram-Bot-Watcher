@@ -6,11 +6,10 @@ from aiogram_dialog import (
     DialogManager,
 )
 from dependency_injector.wiring import Provide, inject
-from aiogram import types
 from loguru import logger
 
 from core.repositories import UserRepository, SubscribeRepository
-from bot.utils import is_user_subscribed, check_admin_status
+from bot.utils import is_user_subscribed, tracker
 from bot.dialogs.keyboards import get_next_page
 from bot.dialogs.const import MOVIES_LIMIT
 from core.services import MovieService
@@ -19,6 +18,7 @@ from bot.settings import settings
 from bot import states, schemes
 
 
+@tracker("Movie_getter: show movie menu")
 @logger.catch()
 @inject
 async def movies_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service],
@@ -58,6 +58,7 @@ async def movies_getter(dialog_manager: DialogManager, movie_service: MovieServi
     }
 
 
+@tracker("Movie_getter: show seasons menu")
 @logger.catch()
 @inject
 async def seasons_getter(dialog_manager: DialogManager, movie_service: MovieService = Provide[Container.movie_service],
@@ -81,6 +82,7 @@ async def seasons_getter(dialog_manager: DialogManager, movie_service: MovieServ
     }
 
 
+@tracker("Movie_getter: show serias menu")
 @logger.catch()
 @inject
 async def serias_getter(
@@ -106,6 +108,7 @@ async def serias_getter(
     }
 
 
+@tracker("Genres_getter: show genres menu")
 @logger.catch()
 @inject
 async def genres_getter(
@@ -119,13 +122,13 @@ async def genres_getter(
     }
 
 
+@tracker("Account_getter: open account menu")
 @inject
 async def account_getter(
         dialog_manager: DialogManager,
         user_repository: UserRepository = Provide[Container.user_repository],
         **_kwargs
 ):
-    logger.debug(dialog_manager.middleware_data)
     text = []
 
     user = dialog_manager.middleware_data.get("user")
@@ -155,6 +158,7 @@ async def account_getter(
     }
 
 
+@tracker("Subscribe_getter: show menu")
 @inject
 async def subscribes_getter(
         dialog_manager: DialogManager,
@@ -168,6 +172,7 @@ async def subscribes_getter(
     }
 
 
+@tracker("Movie_getter: show poster window")
 @inject
 async def movie_poster_getter(
         dialog_manager: DialogManager,
@@ -185,6 +190,7 @@ async def movie_poster_getter(
     }
 
 
+@tracker("Account_getter: show admin menu")
 async def admin_manager_getter(
         dialog_manager: DialogManager,
         **_kwargs
@@ -194,6 +200,7 @@ async def admin_manager_getter(
     return {}
 
 
+@tracker("Admin_getter: show edit sub menu")
 @inject
 async def admin_edit_sub_getter(
         dialog_manager: DialogManager,

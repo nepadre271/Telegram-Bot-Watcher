@@ -2,11 +2,14 @@ from aiogram.types import Message
 from aiogram import Router, F
 from loguru import logger
 
+from bot.utils import tracker
+
 router = Router()
 
 
 @router.message(F.text.lower() == 'инструкция', flags={"skip_user_middleware": True})
-async def get_instruction(message: Message):
+@tracker("Instruction: show")
+async def get_instruction(message: Message, **kwargs):
     logger.info("Обработчик get_instruction вызван")
     text = """
         <b>Как загрузить видео в телефон, планшет или компьютер для просмотра без интернета?</b>

@@ -4,18 +4,12 @@ import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 import pytz
 
+from core.repositories.base import BaseRepository
 from bot.database.models import PaymentsHistory
 from bot.settings import settings
 
 
-class PaymentHistoryRepository:
-    def __init__(self, session: AsyncSession):
-        self.session = session
-
-    def __del__(self):
-        loop = asyncio.get_event_loop()
-        asyncio.ensure_future(self.session.aclose(), loop=loop)
-
+class PaymentHistoryRepository(BaseRepository):
     async def create(
             self, user_id: int, subscribe_id: int,
             telegram_payment_charge_id: str,

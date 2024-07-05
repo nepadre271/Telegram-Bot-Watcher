@@ -1,19 +1,10 @@
-import asyncio
-
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select
 
 from bot.database.models.subscribe import Subscribe
+from core.repositories.base import BaseRepository
 
 
-class SubscribeRepository:
-    def __init__(self, session: AsyncSession):
-        self.session = session
-
-    def __del__(self):
-        loop = asyncio.get_event_loop()
-        asyncio.ensure_future(self.session.aclose(), loop=loop)
-
+class SubscribeRepository(BaseRepository):
     async def create(self, days: int, amount: int, name: str) -> Subscribe:
         subscribe = Subscribe(
             days=days,

@@ -1,0 +1,5 @@
+.env
+venv
+logs
+metabase-data
+pgadmin.json

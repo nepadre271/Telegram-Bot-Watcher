@@ -1,10 +1,10 @@
+from dependency_injector.wiring import Provide, inject
 from aiogram import Router, F, types, filters
 from aiogram.enums import ParseMode
-from dependency_injector.wiring import Provide, inject
 
-from bot.containers import Container
+from bot.utils import only_admin_handler, tracker
 from core.repositories import UserRepository
-from bot.utils import only_admin_handler
+from bot.containers import Container
 from bot.database.models import User
 
 router = Router()
@@ -16,24 +16,30 @@ async def _op_handler(
         user_repository: UserRepository
 ) -> User | None:
     error_message = "\n".join([
-        "Ошибка: передайте id пользователя.",
+        "Ошибка: передайте @username или id пользователя.",
         "Пользователь может получить свой id введя команду <code>/id</code>"
     ])
     if command.args is None:
         await message.answer(error_message, parse_mode=ParseMode.HTML)
         return
 
+    user = None
     user_id = command.args.split(" ")[0]
-    if user_id.isdigit() is False:
-        await message.answer(error_message)
-        return
+    if user_id.isdigit():
+        user = await user_repository.get(int(user_id))
+    elif "@" in user_id:
+        user = await user_repository.get_by_username(user_id[1:])
 
-    user = await user_repository.get(int(user_id))
+    if user is None:
+        await message.answer("Ошибка: Пользователь не найден в Базе данных")
+        await message.answer(error_message, parse_mode=ParseMode.HTML)
+
     return user
 
 
 @router.message(F.text, filters.Command("op"))
 @only_admin_handler
+@tracker("Admin: op user")
 @inject
 async def op_handler(
         message: types.Message,
@@ -45,11 +51,12 @@ async def op_handler(
     if user is None:
         return
     await user_repository.change_admin_status(user, True)
-    await message.answer(f"Пользователь[{user.id}] получил статус администратора")
+    await message.answer(f"Пользователь @{user.username} [{user.id}] получил статус администратора")
 
 
 @router.message(F.text, filters.Command("deop"))
 @only_admin_handler
+@tracker("Admin: deop user")
 @inject
 async def deop_handler(
         message: types.Message,
@@ -61,4 +68,4 @@ async def deop_handler(
     if user is None:
         return
     await user_repository.change_admin_status(user, False)
-    await message.answer(f"Пользователь[{user.id}] перестал быть администратором")
+    await message.answer(f"Пользователь @{user.username} [{user.id}] перестал быть администратором")
