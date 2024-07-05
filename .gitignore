@@ -7,5 +7,5 @@ htmlcov/
 .idea/
 venv/
 logs/
-metabase-data
+metabase/metabase.db/
 pgadmin.json
