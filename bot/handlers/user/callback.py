@@ -26,6 +26,9 @@ def can_watch(func):
         user_data = query.message.chat
         bot: Bot = kwargs.get("bot")
         user: User = kwargs.get("user")
+        if session := kwargs.get("user_repository_session", None):
+            user_repository.session = session
+
         if kwargs.get("is_admin", False):
             logger.debug(f"Admin: User[{user_data.username}] can watch")
             return await func(query, callback_data, **kwargs)
@@ -91,6 +94,9 @@ async def process_movie_callback(
         tracker_data["seria"] = callback_data.seria
 
     user: User = kwargs.get("user")
+    if session := kwargs.get("user_repository_session", None):
+        user_repository.session = session
+
     if user.views_left > 0 and user.is_subscribe_expire():
         await user_repository.update_views_count(user, -1)
 

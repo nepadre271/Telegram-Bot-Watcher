@@ -40,7 +40,7 @@ async def cmd_start_ref(
     logger.info("Обработчик cmd_start вызван")
     logger.info(f"{command.args=}")
     await _start_handler(message)
-    logger.debug(kwargs.get("user", None))
+
     user_id = message.from_user.id
     user_exists = await user_repository.exists(user_id)
     payload = decode_payload(command.args)

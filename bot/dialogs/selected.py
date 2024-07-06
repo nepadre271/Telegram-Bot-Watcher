@@ -162,9 +162,7 @@ async def on_ref_button_clicked(
         callback: CallbackQuery, button: Button, manager: DialogManager,
         user_repository: UserRepository = Provide[Container.user_repository], **kwargs
 ):
-    user_id = callback.message.chat.id
-    username = callback.message.chat.username
-    user = await user_repository.get(user_id)
+    user = manager.middleware_data.get("user")
     link = await create_start_link(callback.message.bot, payload=f"ref:{user.ref}", encode=True)
     await callback.message.answer(f"Ваша реф. ссылка <code>{link}</code>", parse_mode=ParseMode.HTML)
 

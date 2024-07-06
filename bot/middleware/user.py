@@ -23,6 +23,9 @@ class UserMiddleware(BaseMiddleware):
         if user_obj is not None and skip is False:
             user = await user_repository.get(user_obj.id)
             data["user"] = user
+            # Текущая сессия требуется в тех ситуациях когда нужно сохранить изменения модели User
+            # полученной из middleware, передайте сессию в user_repository.session
+            data["user_repository_session"] = user_repository.session
 
             if user_obj.username != user.username:
                 await user_repository.update_username(user, user_obj.username)

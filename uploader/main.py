@@ -39,6 +39,7 @@ task_broker.with_middlewares(
 @task_broker.task(
     retry_on_error="true"
 )
+@logger.catch()
 async def upload_movie(
         data: UploadMovieRequest,
         context: Annotated[Context, TaskiqDepends()]
