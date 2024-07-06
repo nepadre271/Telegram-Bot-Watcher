@@ -8,3 +8,4 @@ SELECT
     timestamp
 FROM user_actions
 WHERE name = 'Movie: process upload' AND params->'extra' IS NOT NULL
+ORDER BY timestamp DESC
