@@ -21,4 +21,5 @@ LEFT JOIN (
     WHERE invite_from IS NOT NULL
     GROUP BY invite_from
 ) as uref
-ON users.id = uref.invite_from;
+ON users.id = uref.invite_from
+ORDER BY users.join DESC;
