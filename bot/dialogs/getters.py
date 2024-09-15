@@ -154,7 +154,7 @@ async def account_getter(
     return {
         "text": "\n".join(text),
         "is_admin": is_admin,
-        "sub_system_enable": not settings.disable_sub_system
+        "sub_system_enable": not settings.service.disable_sub_system
     }
 
 
@@ -196,7 +196,7 @@ async def admin_manager_getter(
         **_kwargs
 ):
     checkbox_sub_system = dialog_manager.find("admin_sub_system")
-    await checkbox_sub_system.set_checked(not settings.disable_sub_system)
+    await checkbox_sub_system.set_checked(not settings.service.disable_sub_system)
     return {}
 
 

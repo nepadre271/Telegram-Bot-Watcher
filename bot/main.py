@@ -3,11 +3,13 @@ import socket
 
 from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 from aiogram.client.session.aiohttp import AiohttpSession
+from dependency_injector.wiring import Provide, inject
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram_dialog import setup_dialogs
 from aiogram import Bot, Dispatcher
 
 from bot.containers import Container
+from bot.payment import BaseSubscribePayment
 from bot.settings import settings
 from bot.dialogs import windows
 from bot.logger import logger
@@ -36,12 +38,17 @@ def init_container():
     container.config.uploader_url.from_value(settings.uploader_url)
     container.config.kinopoisk_token.from_value(settings.kinopoisk_token)
     container.config.kinoclub_token.from_value(settings.kinoclub_token)
+    container.config.yoomoney_token.from_value(settings.payment.yoomoney_token)
+    container.config.payment.type.from_value(settings.payment.service)
     container.wire(
         modules=[__name__]
     )
 
 
-async def init_bot():
+@inject
+async def init_bot(
+        payment: BaseSubscribePayment = Provide[Container.payment]
+):
     bot = bot_factory()
 
     storage = RedisStorage.from_url(
@@ -54,6 +61,7 @@ async def init_bot():
 
     dp.include_routers(*handlers.admin.routes)
     dp.include_routers(*handlers.user.routes)
+    payment.registry_router(dp)
 
     dp.include_router(windows.video_select_dialog)
     dp.include_router(windows.genres_select_dialog)

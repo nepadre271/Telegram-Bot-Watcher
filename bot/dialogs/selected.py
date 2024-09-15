@@ -171,8 +171,8 @@ async def on_ref_button_clicked(
 async def on_sub_system_checkbox_click(
         event: ChatEvent, checkbox: ManagedCheckbox, manager: DialogManager, **kwargs
 ):
-    system_status = not settings.disable_sub_system
-    settings.disable_sub_system = system_status
+    system_status = not settings.service.disable_sub_system
+    settings.service.disable_sub_system = system_status
 
     if system_status:
         await event.message.answer("System: система подписок отключена ❌")

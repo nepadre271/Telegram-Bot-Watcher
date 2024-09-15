@@ -9,3 +9,4 @@ venv/
 logs/
 metabase/metabase.db/
 pgadmin.json
+/temp/

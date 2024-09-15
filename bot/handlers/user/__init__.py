@@ -1,4 +1,4 @@
-from . import callback, start, search, instruction, account, subscribe, blackhole
+from . import callback, start, search, instruction, account, subscribe, blackhole, payment
 
 routes = [
     start.router,

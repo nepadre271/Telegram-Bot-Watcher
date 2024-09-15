@@ -1,6 +1,12 @@
 import asyncio
 
+from sqlalchemy.sql._typing import _ColumnExpressionArgument
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class BaseQueryExpression:
+    def complete(self) -> _ColumnExpressionArgument[bool]:
+        raise NotImplementedError
 
 
 class BaseRepository:

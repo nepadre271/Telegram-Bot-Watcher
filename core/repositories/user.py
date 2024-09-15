@@ -1,7 +1,5 @@
 from datetime import datetime, timedelta
-import json
 
-from sqlalchemy_timescaledb.functions import Last
 from sqlalchemy import select, func
 import pytz
 

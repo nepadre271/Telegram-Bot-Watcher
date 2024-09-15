@@ -9,6 +9,17 @@ from core.schemes.movie.kinoclub import Movie
 from bot.settings import settings
 
 
+def create_yoomoney_subscribe_block(form_url: str, callback_data: str) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(
+        text="Оплатить подписку", url=form_url
+    )
+    kb.button(
+        text="Проверить подписку", callback_data=callback_data
+    )
+    return kb.as_markup()
+
+
 def create_sub_block(callback_data: str) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for chat_id in settings.telegram.chats_id:
