@@ -50,7 +50,11 @@ class YooMoneySubscribePayment(BaseSubscribePayment):
 
         await callback.bot.send_message(
             callback.message.chat.id,
-            "Подписка на бота",
+            "\n".join([
+                f"Подписка на бота: {subscribe.name}",
+                f"Период: {subscribe.days} дней",
+                f"Цена: {subscribe.amount} руб.",
+            ]),
             reply_markup=create_yoomoney_subscribe_block(form.link_for_customer, callback_data)
         )
 
